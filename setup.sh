@@ -81,8 +81,6 @@ $SUDO_CMD apt install -y \
     openssl \
     ssl-cert
 
-# iptables-persistent separat mit noninteractive
-$SUDO_CMD DEBIAN_FRONTEND=noninteractive apt install -y iptables-persistent
 
 print_success "Essential packages installed"
 
