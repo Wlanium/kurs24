@@ -1,0 +1,4 @@
+# Subdomain: versuch
+versuch.kurs24.io {
+    reverse_proxy tenant-versuch:3000
+}

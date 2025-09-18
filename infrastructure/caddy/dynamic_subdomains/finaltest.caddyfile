@@ -1,0 +1,3 @@
+finaltest.kurs24.io {
+    reverse_proxy tenant-finaltest:3000
+}

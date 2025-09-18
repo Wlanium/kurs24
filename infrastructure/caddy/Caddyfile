@@ -1,0 +1,45 @@
+# Caddyfile für kurs24.io Multi-Tenant SaaS
+# Automatisches SSL via Let's Encrypt
+
+{
+	# Enable Admin API on all interfaces
+	admin 0.0.0.0:2019
+}
+
+# Landing Page - Next.js App
+b6t.de {
+    reverse_proxy b6t-landing:3000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+# API Backend
+api.kurs24.io {
+    reverse_proxy kurs24-api:8000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+}
+
+# Admin Dashboard
+admin.kurs24.io {
+    basicauth {
+        admin $2a$14$YOUR_BCRYPT_HASH
+    }
+    reverse_proxy grafana:3000
+}
+
+# Tenant Subdomains werden hier dynamisch hinzugefügt
+# Beispiel:
+# tenant1.kurs24.io {
+#     reverse_proxy tenant1-app:3000
+# }
+
+# Import dynamic subdomains
+import /etc/caddy/dynamic_subdomains/*
+
+# Main Domain
+kurs24.io {
+    redir https://b6t.de permanent
+}

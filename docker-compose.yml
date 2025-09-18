@@ -1,0 +1,127 @@
+# 👑 Royal Academy K.I. Training Platform - Master Compose
+# Production-ready orchestration für kurs24.io
+
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  postgres:
+    image: postgres:16-alpine
+    container_name: kurs24-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres:/docker-entrypoint-initdb.d
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: kurs24-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+      - ./infrastructure/redis:/usr/local/etc/redis
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend API
+  api:
+    build:
+      context: ./backend/api
+      dockerfile: Dockerfile
+    container_name: kurs24-api
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - REDIS_URL=redis://default:${REDIS_PASSWORD}@redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend-network
+      - caddy-network
+    volumes:
+      - ./backend/api:/app
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./infrastructure/caddy/dynamic_subdomains:/app/dynamic_subdomains
+
+  # Reverse Proxy & SSL
+  caddy:
+    image: caddy:latest
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp" # HTTP/3
+      - "2019:2019"   # Admin API (internal only)
+    volumes:
+      - ./infrastructure/caddy/Caddyfile:/etc/caddy/Caddyfile
+      - ./infrastructure/caddy_data:/data
+      - ./infrastructure/caddy_config:/config
+      - ./infrastructure/caddy/dynamic_subdomains:/etc/caddy/dynamic_subdomains
+    networks:
+      - caddy-network
+      - backend-network
+    depends_on:
+      - api
+
+  # Landing Page (b6t.de)
+  landing:
+    build:
+      context: ./landing
+      dockerfile: Dockerfile
+    container_name: b6t-landing
+    restart: unless-stopped
+    env_file:
+      - ./landing/.env.example
+    networks:
+      - caddy-network
+    volumes:
+      - ./landing/src:/app/src
+
+  # Customer Portal (portal.kurs24.io) - wird später aktiviert
+  # portal:
+  #   build:
+  #     context: ./portal
+  #     dockerfile: Dockerfile
+  #   container_name: kurs24-portal
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ./portal/.env.local
+  #   networks:
+  #     - caddy-network
+  #   depends_on:
+  #     - api
+
+volumes:
+  postgres_data:
+    name: kurs24_postgres_data
+  redis_data:
+    name: kurs24_redis_data
+
+networks:
+  backend-network:
+    name: backend-network
+  caddy-network:
+    name: caddy-network
