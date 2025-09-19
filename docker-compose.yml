@@ -70,6 +70,7 @@ services:
     image: caddy:latest
     container_name: caddy
     restart: unless-stopped
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile", "--watch"]
     ports:
       - "80:80"
       - "443:443"
@@ -94,11 +95,14 @@ services:
     container_name: b6t-landing
     restart: unless-stopped
     env_file:
-      - ./landing/.env.example
+      - ./landing/.env.local
+    environment:
+      - BACKEND_API_URL=http://api:8000
     networks:
       - caddy-network
-    volumes:
-      - ./landing/src:/app/src
+      - backend-network
+    depends_on:
+      - api
 
   # Customer Portal (portal.kurs24.io) - wird später aktiviert
   # portal:

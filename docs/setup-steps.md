@@ -49,11 +49,11 @@ dig api.kurs24.io
 # Ansible-Setup
 pip3 install ansible ansible-core
 
-# Repository klonen (wird erstellt)
-git clone https://github.com/your-repo/kurs24-infrastructure.git /opt/kurs24
+# Repository klonen
+git clone https://github.com/Wlanium/kurs24.git /home/tba/kurs24-platform
 
 # Environment-Variablen setzen
-cat > /opt/kurs24/.env << 'EOF'
+cat > /home/tba/kurs24-platform/.env << 'EOF'
 # DNS APIs
 PORKBUN_API_KEY=pk1_your_api_key
 PORKBUN_SECRET_KEY=sk1_your_secret_key
@@ -82,13 +82,14 @@ TRAEFIK_AUTH_HASH=your-basic-auth-hash
 EOF
 
 # Master-Infrastructure deployen
-ansible-playbook /opt/kurs24/ansible/playbooks/02-docker-infrastructure.yml
+cd /home/tba/kurs24-platform
+docker compose up -d --build
 ```
 
 ### Step 2.2: Master-Services starten
 ```bash
-cd /opt/kurs24
-docker compose -f docker-compose.master.yml up -d
+cd /home/tba/kurs24-platform
+docker compose up -d
 
 # Health-Checks
 curl https://api.kurs24.io/health
