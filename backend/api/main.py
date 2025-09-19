@@ -1,6 +1,6 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response, FileResponse
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import os
@@ -13,6 +13,8 @@ import httpx
 import aiohttp
 import asyncio
 import socket
+import secrets
+import subprocess
 from paypal import paypal_client
 
 app = FastAPI(
@@ -2008,6 +2010,449 @@ async def get_user_id_by_email_endpoint(email: str):
     if not user_id:
         raise HTTPException(status_code=404, detail="User not found")
     return {"email": email, "user_id": user_id}
+
+# ===== TENANT CONFIGURATION API =====
+
+# Tenant configuration models
+class TenantConfig(BaseModel):
+    tenant_id: str
+    academy_name: str
+    color_scheme: str = "classic-royal"
+    custom_logo: bool = False
+    plan: str = "basis"
+
+class ThemeUpdate(BaseModel):
+    color_scheme: str
+    academy_name: Optional[str] = None
+
+# Theme definitions
+THEMES = {
+    "classic-royal": {
+        "name": "Classic Royal",
+        "primary": "#1e40af",
+        "secondary": "#fbbf24",
+        "description": "Klassisch königlich mit Blau und Gold"
+    },
+    "ocean-blue": {
+        "name": "Ocean Blue",
+        "primary": "#0891b2",
+        "secondary": "#06b6d4",
+        "description": "Frisches Ozean-Blau für moderne Akademien"
+    },
+    "forest-green": {
+        "name": "Forest Green",
+        "primary": "#059669",
+        "secondary": "#10b981",
+        "description": "Natürliches Grün für nachhaltige Bildung"
+    },
+    "sunset-orange": {
+        "name": "Sunset Orange",
+        "primary": "#ea580c",
+        "secondary": "#f97316",
+        "description": "Energetisches Orange für kreative Kurse"
+    },
+    "royal-purple": {
+        "name": "Royal Purple",
+        "primary": "#7c3aed",
+        "secondary": "#a855f7",
+        "description": "Elegantes Lila für Premium-Akademien"
+    }
+}
+
+# Plan features definition
+PLAN_FEATURES = {
+    "basis": {
+        "max_students": 50,
+        "max_courses": 10,
+        "ai_features": False,
+        "advanced_analytics": False,
+        "custom_branding": True,
+        "api_access": False,
+        "white_label": False,
+        "priority_support": False
+    },
+    "pro": {
+        "max_students": "unlimited",
+        "max_courses": "unlimited",
+        "ai_features": True,
+        "advanced_analytics": True,
+        "custom_branding": True,
+        "api_access": True,
+        "white_label": True,
+        "priority_support": True
+    }
+}
+
+@app.get("/api/v1/themes")
+async def get_available_themes():
+    """Get all available color themes"""
+    return {
+        "status": "success",
+        "themes": THEMES
+    }
+
+@app.get("/api/v1/tenant/{tenant_id}/config")
+async def get_tenant_config(tenant_id: str):
+    """Get complete tenant configuration for container"""
+    try:
+        db_url = os.getenv("DATABASE_URL", "postgresql://kurs24:password@postgres:5432/kurs24_production")
+        conn = await asyncpg.connect(db_url)
+
+        try:
+            # Get tenant info from database
+            tenant_row = await conn.fetchrow("""
+                SELECT name, email, plan, subdomain, created_at
+                FROM tenants
+                WHERE subdomain = $1
+            """, tenant_id)
+
+            if not tenant_row:
+                raise HTTPException(status_code=404, detail="Tenant not found")
+
+            # Get tenant customization (if exists)
+            custom_row = await conn.fetchrow("""
+                SELECT color_scheme, academy_name, custom_logo
+                FROM tenant_customizations
+                WHERE tenant_id = $1
+            """, tenant_id)
+
+            # Build configuration
+            config = {
+                "tenant_id": tenant_id,
+                "auth": {
+                    "admin_email": tenant_row["email"],
+                    "api_key": f"tenant_{tenant_id}_{secrets.token_hex(16)}"
+                },
+                "branding": {
+                    "academy_name": custom_row["academy_name"] if custom_row else tenant_row["name"],
+                    "color_scheme": custom_row["color_scheme"] if custom_row else "classic-royal",
+                    "logo_url": f"/api/v1/tenant/{tenant_id}/logo",
+                    "custom_css": f"/api/v1/tenant/{tenant_id}/theme.css",
+                    "domain": f"{tenant_id}.kurs24.io"
+                },
+                "features": PLAN_FEATURES[tenant_row["plan"]],
+                "plan": tenant_row["plan"],
+                "created_at": tenant_row["created_at"].isoformat()
+            }
+
+            return config
+
+        finally:
+            await conn.close()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"💥 Tenant config fetch failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Configuration error: {str(e)}")
+
+@app.get("/api/v1/tenant/{tenant_id}/theme.css")
+async def get_tenant_theme_css(tenant_id: str):
+    """Generate dynamic CSS for tenant theme"""
+    try:
+        db_url = os.getenv("DATABASE_URL", "postgresql://kurs24:platform@postgres:5432/kurs24_production")
+        conn = await asyncpg.connect(db_url)
+
+        try:
+            # Get tenant customization
+            custom_row = await conn.fetchrow("""
+                SELECT color_scheme, academy_name
+                FROM tenant_customizations
+                WHERE tenant_id = $1
+            """, tenant_id)
+
+            color_scheme = custom_row["color_scheme"] if custom_row else "classic-royal"
+            academy_name = custom_row["academy_name"] if custom_row else tenant_id.replace("-", " ").title()
+
+        finally:
+            await conn.close()
+
+        # Get theme colors
+        theme = THEMES.get(color_scheme, THEMES["classic-royal"])
+
+        # Generate CSS
+        css = f"""
+/* Tenant Theme: {tenant_id} - {theme['name']} */
+:root {{
+    --primary: {theme['primary']};
+    --primary-light: {theme['primary']}20;
+    --primary-dark: {theme['primary']}dd;
+    --secondary: {theme['secondary']};
+    --accent: #f8fafc;
+    --academy-name: '{academy_name}';
+}}
+
+/* Bulma variable overrides */
+.has-background-primary {{
+    background-color: var(--primary) !important;
+}}
+
+.has-text-primary {{
+    color: var(--primary) !important;
+}}
+
+.button.is-primary {{
+    background-color: var(--primary);
+    border-color: var(--primary);
+}}
+
+.button.is-primary:hover {{
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}}
+
+.hero.is-primary {{
+    background: linear-gradient(135deg, {theme['primary']}, {theme['secondary']});
+}}
+
+.navbar.is-primary {{
+    background-color: var(--primary);
+}}
+
+.navbar-brand .navbar-item img {{
+    max-height: 3rem;
+}}
+
+.card-header {{
+    background-color: var(--primary-light);
+    border-bottom: 1px solid var(--primary);
+}}
+
+.progress.is-primary::-webkit-progress-value {{
+    background-color: var(--primary);
+}}
+
+.tag.is-primary {{
+    background-color: var(--primary);
+    color: white;
+}}
+
+/* Custom academy branding */
+.academy-name::before {{
+    content: var(--academy-name);
+}}
+
+/* Custom scrollbar */
+::-webkit-scrollbar-thumb {{
+    background-color: var(--primary);
+}}
+
+/* Loading spinner */
+.spinner {{
+    border-top-color: var(--primary);
+}}
+"""
+
+        return Response(content=css, media_type="text/css")
+
+    except Exception as e:
+        print(f"💥 Theme CSS generation failed: {e}")
+        # Return default theme
+        default_css = f"""
+:root {{
+    --primary: #1e40af;
+    --secondary: #fbbf24;
+}}
+.button.is-primary {{ background-color: var(--primary); }}
+"""
+        return Response(content=default_css, media_type="text/css")
+
+@app.get("/api/v1/tenant/{tenant_id}/logo")
+async def get_tenant_logo(tenant_id: str):
+    """Get tenant logo (custom or default)"""
+    try:
+        # Check if custom logo exists
+        custom_logo_path = f"/home/tba/kurs24-platform/uploads/logos/{tenant_id}.png"
+
+        if os.path.exists(custom_logo_path):
+            return FileResponse(custom_logo_path)
+        else:
+            # Return default Royal Academy logo
+            default_logo_path = "/home/tba/kurs24-platform/landing/public/logo-royal-academy.png"
+            if os.path.exists(default_logo_path):
+                return FileResponse(default_logo_path)
+            else:
+                raise HTTPException(status_code=404, detail="Logo not found")
+
+    except Exception as e:
+        print(f"💥 Logo fetch failed: {e}")
+        raise HTTPException(status_code=404, detail="Logo not found")
+
+@app.post("/api/v1/tenant/{tenant_id}/logo")
+async def upload_tenant_logo(tenant_id: str, file: UploadFile = File(...)):
+    """Upload custom logo for tenant"""
+    try:
+        # Validate file
+        if not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="Only image files allowed")
+
+        if file.size > 5 * 1024 * 1024:  # 5MB limit
+            raise HTTPException(status_code=400, detail="File too large (max 5MB)")
+
+        # Create uploads directory
+        upload_dir = "/home/tba/kurs24-platform/uploads/logos"
+        os.makedirs(upload_dir, exist_ok=True)
+
+        # Save optimized logo
+        logo_path = f"{upload_dir}/{tenant_id}.png"
+
+        # TODO: Add image optimization with PIL
+        with open(logo_path, "wb") as buffer:
+            content = await file.read()
+            buffer.write(content)
+
+        # Update database
+        db_url = os.getenv("DATABASE_URL", "postgresql://kurs24:password@postgres:5432/kurs24_production")
+        conn = await asyncpg.connect(db_url)
+
+        try:
+            # Create tenant_customizations table if not exists
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS tenant_customizations (
+                    id SERIAL PRIMARY KEY,
+                    tenant_id VARCHAR(255) UNIQUE NOT NULL,
+                    color_scheme VARCHAR(50) DEFAULT 'classic-royal',
+                    academy_name VARCHAR(255),
+                    custom_logo BOOLEAN DEFAULT FALSE,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Update custom logo flag
+            await conn.execute("""
+                INSERT INTO tenant_customizations (tenant_id, custom_logo, updated_at)
+                VALUES ($1, TRUE, CURRENT_TIMESTAMP)
+                ON CONFLICT (tenant_id)
+                DO UPDATE SET
+                    custom_logo = TRUE,
+                    updated_at = CURRENT_TIMESTAMP
+            """, tenant_id)
+
+        finally:
+            await conn.close()
+
+        return {
+            "status": "success",
+            "message": "Logo uploaded successfully",
+            "logo_url": f"/api/v1/tenant/{tenant_id}/logo"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"💥 Logo upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+@app.put("/api/v1/tenant/{tenant_id}/theme")
+async def update_tenant_theme(tenant_id: str, theme_data: ThemeUpdate):
+    """Update tenant theme configuration"""
+    try:
+        # Validate theme
+        if theme_data.color_scheme not in THEMES:
+            raise HTTPException(status_code=400, detail="Invalid color scheme")
+
+        db_url = os.getenv("DATABASE_URL", "postgresql://kurs24:password@postgres:5432/kurs24_production")
+        conn = await asyncpg.connect(db_url)
+
+        try:
+            # Create table if not exists
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS tenant_customizations (
+                    id SERIAL PRIMARY KEY,
+                    tenant_id VARCHAR(255) UNIQUE NOT NULL,
+                    color_scheme VARCHAR(50) DEFAULT 'classic-royal',
+                    academy_name VARCHAR(255),
+                    custom_logo BOOLEAN DEFAULT FALSE,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            # Update theme
+            await conn.execute("""
+                INSERT INTO tenant_customizations (tenant_id, color_scheme, academy_name, updated_at)
+                VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+                ON CONFLICT (tenant_id)
+                DO UPDATE SET
+                    color_scheme = EXCLUDED.color_scheme,
+                    academy_name = COALESCE(EXCLUDED.academy_name, tenant_customizations.academy_name),
+                    updated_at = CURRENT_TIMESTAMP
+            """, tenant_id, theme_data.color_scheme, theme_data.academy_name)
+
+            # TODO: Trigger container restart to apply changes
+            # await restart_tenant_container(tenant_id)
+
+        finally:
+            await conn.close()
+
+        return {
+            "status": "success",
+            "message": "Theme updated successfully",
+            "theme": theme_data.color_scheme,
+            "academy_name": theme_data.academy_name
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"💥 Theme update failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Update failed: {str(e)}")
+
+@app.get("/api/v1/tenant/{tenant_id}/features")
+async def get_tenant_features(tenant_id: str):
+    """Get available features for tenant based on plan"""
+    try:
+        db_url = os.getenv("DATABASE_URL", "postgresql://kurs24:password@postgres:5432/kurs24_production")
+        conn = await asyncpg.connect(db_url)
+
+        try:
+            # Get tenant plan
+            tenant_row = await conn.fetchrow("""
+                SELECT plan FROM tenants WHERE subdomain = $1
+            """, tenant_id)
+
+            if not tenant_row:
+                raise HTTPException(status_code=404, detail="Tenant not found")
+
+            plan = tenant_row["plan"]
+            features = PLAN_FEATURES[plan]
+
+            return {
+                "tenant_id": tenant_id,
+                "plan": plan,
+                "features": features
+            }
+
+        finally:
+            await conn.close()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"💥 Features fetch failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+# Helper function for container management
+async def restart_tenant_container(tenant_id: str):
+    """Restart tenant container to apply configuration changes"""
+    try:
+        # This would restart the tenant's container
+        container_name = f"tenant-{tenant_id}-app"
+
+        # Docker restart command
+        result = subprocess.run([
+            "docker", "restart", container_name
+        ], capture_output=True, text=True)
+
+        if result.returncode == 0:
+            print(f"✅ Restarted container {container_name}")
+            return True
+        else:
+            print(f"❌ Failed to restart container {container_name}: {result.stderr}")
+            return False
+
+    except Exception as e:
+        print(f"💥 Container restart failed: {e}")
+        return False
 
 if __name__ == "__main__":
     import uvicorn
