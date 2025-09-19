@@ -1,0 +1,795 @@
+{% extends "base.html" %}
+
+{% block title %}Lernkarten - Privatrecht Lernsystem{% endblock %}
+
+{% block extra_css %}
+<style>
+    .lernkarten-app {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: var(--spacing-6);
+    }
+    
+    .lernkarten-header {
+        text-align: center;
+        margin-bottom: var(--spacing-8);
+        padding: var(--spacing-6);
+        background: linear-gradient(135deg, var(--secondary-color), #34d399);
+        border-radius: var(--radius-xl);
+        color: white;
+    }
+    
+    .card-container {
+        perspective: 1000px;
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .flashcard {
+        position: relative;
+        width: 100%;
+        height: 300px;
+        transform-style: preserve-3d;
+        transition: transform 0.6s;
+        cursor: pointer;
+    }
+    
+    .flashcard.flipped {
+        transform: rotateY(180deg);
+    }
+    
+    .card-face {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-6);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .card-front {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        color: white;
+    }
+    
+    .card-back {
+        background: white;
+        border: 2px solid var(--gray-200);
+        transform: rotateY(180deg);
+        color: var(--gray-900);
+    }
+    
+    .bilingual-content {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-4);
+        height: 100%;
+        align-items: center;
+    }
+    
+    .language-section {
+        padding: var(--spacing-4);
+        border-radius: var(--radius);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .language-section.german {
+        background: rgba(var(--primary-color-rgb, 37, 99, 235), 0.05);
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .language-section.foreign {
+        background: rgba(var(--secondary-color-rgb, 16, 185, 129), 0.05);
+        border-left: 4px solid var(--secondary-color);
+    }
+    
+    .language-label {
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: var(--spacing-2);
+        opacity: 0.7;
+    }
+    
+    .language-term {
+        font-size: var(--font-size-xl);
+        font-weight: 700;
+        margin-bottom: var(--spacing-3);
+    }
+    
+    .language-definition {
+        font-size: var(--font-size-base);
+        line-height: 1.5;
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .language-example {
+        font-size: var(--font-size-sm);
+        font-style: italic;
+        opacity: 0.8;
+    }
+    
+    .monolingual-mode .bilingual-content {
+        grid-template-columns: 1fr;
+    }
+    
+    .monolingual-mode .language-section.foreign {
+        display: none;
+    }
+    
+    .card-term {
+        font-size: var(--font-size-3xl);
+        font-weight: 700;
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .card-category {
+        font-size: var(--font-size-sm);
+        opacity: 0.8;
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .card-definition {
+        font-size: var(--font-size-lg);
+        line-height: 1.6;
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .card-example {
+        font-size: var(--font-size-base);
+        font-style: italic;
+        color: var(--gray-600);
+    }
+    
+    .card-controls {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .card-counter {
+        font-weight: 600;
+        color: var(--gray-700);
+    }
+    
+    .difficulty-buttons {
+        display: flex;
+        gap: var(--spacing-3);
+        justify-content: center;
+        margin-top: var(--spacing-6);
+    }
+    
+    .difficulty-btn {
+        padding: var(--spacing-3) var(--spacing-4);
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .difficulty-btn.easy {
+        background-color: var(--success-color);
+        color: white;
+    }
+    
+    .difficulty-btn.medium {
+        background-color: var(--warning-color);
+        color: white;
+    }
+    
+    .difficulty-btn.hard {
+        background-color: var(--error-color);
+        color: white;
+    }
+    
+    .navigation-buttons {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .progress-indicator {
+        text-align: center;
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .progress-bar {
+        width: 100%;
+        height: 8px;
+        background-color: var(--gray-200);
+        border-radius: var(--radius);
+        overflow: hidden;
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--secondary-color), #34d399);
+        transition: width 0.3s ease;
+        border-radius: var(--radius);
+    }
+    
+    .session-complete {
+        text-align: center;
+        padding: var(--spacing-8);
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .flip-hint {
+        position: absolute;
+        top: var(--spacing-4);
+        right: var(--spacing-4);
+        background: rgba(255, 255, 255, 0.2);
+        padding: var(--spacing-2);
+        border-radius: var(--radius);
+        font-size: var(--font-size-sm);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="lernkarten-app">
+    <div class="lernkarten-header">
+        <h1><i class="fas fa-layer-group"></i> Lernkarten-System</h1>
+        <p>Spaced Repetition für effektives Lernen</p>
+        
+        <!-- Language Selection -->
+        <div class="language-selector" style="margin-top: var(--spacing-4); display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-4);">
+            <div>
+                <label style="display: block; margin-bottom: var(--spacing-2); opacity: 0.9; font-size: var(--font-size-sm);">
+                    <i class="fas fa-language"></i> Ausgangssprache:
+                </label>
+                <select id="sourceLanguageSelect" onchange="changeSourceLanguage(this.value)" style="width: 100%; padding: var(--spacing-2) var(--spacing-3); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); color: #333; font-size: var(--font-size-sm);">
+                    <option value="de" selected>🇩🇪 Deutsch</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="ar">🇸🇦 العربية</option>
+                    <option value="tr">🇹🇷 Türkçe</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="pl">🇵🇱 Polski</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="pt">🇵🇹 Português</option>
+                    <option value="nl">🇳🇱 Nederlands</option>
+                    <option value="fa">🇮🇷 فارسی</option>
+                    <option value="ur">🇵🇰 اردو</option>
+                    <option value="hi">🇮🇳 हिन्दी</option>
+                    <option value="zh">🇨🇳 中文</option>
+                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                    <option value="th">🇹🇭 ไทย</option>
+                    <option value="ro">🇷🇴 Română</option>
+                    <option value="bg">🇧🇬 Български</option>
+                    <option value="hr">🇭🇷 Hrvatski</option>
+                    <option value="sr">🇷🇸 Српски</option>
+                    <option value="sq">🇦🇱 Shqip</option>
+                    <option value="hu">🇭🇺 Magyar</option>
+                    <option value="cs">🇨🇿 Čeština</option>
+                    <option value="sk">🇸🇰 Slovenčina</option>
+                </select>
+            </div>
+            <div>
+                <label style="display: block; margin-bottom: var(--spacing-2); opacity: 0.9; font-size: var(--font-size-sm);">
+                    <i class="fas fa-globe"></i> Übersetzungssprache:
+                </label>
+                <select id="targetLanguageSelect" onchange="changeTargetLanguage(this.value)" style="width: 100%; padding: var(--spacing-2) var(--spacing-3); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9); color: #333; font-size: var(--font-size-sm);">
+                    <option value="">Nur Ausgangssprache</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="ar">🇸🇦 العربية</option>
+                    <option value="tr">🇹🇷 Türkçe</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="pl">🇵🇱 Polski</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="pt">🇵🇹 Português</option>
+                    <option value="nl">🇳🇱 Nederlands</option>
+                    <option value="fa">🇮🇷 فارسی</option>
+                    <option value="ur">🇵🇰 اردو</option>
+                    <option value="hi">🇮🇳 हिन्दी</option>
+                    <option value="zh">🇨🇳 中文</option>
+                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                    <option value="th">🇹🇭 ไทย</option>
+                    <option value="ro">🇷🇴 Română</option>
+                    <option value="bg">🇧🇬 Български</option>
+                    <option value="hr">🇭🇷 Hrvatski</option>
+                    <option value="sr">🇷🇸 Српски</option>
+                    <option value="sq">🇦🇱 Shqip</option>
+                    <option value="hu">🇭🇺 Magyar</option>
+                    <option value="cs">🇨🇿 Čeština</option>
+                    <option value="sk">🇸🇰 Slovenčina</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <div class="progress-indicator">
+        <div class="progress-bar">
+            <div class="progress-fill" id="sessionProgress" style="width: 0%"></div>
+        </div>
+        <div class="card-counter" id="cardCounter">Karte 1 von 10</div>
+    </div>
+    
+    <div id="cardSession">
+        <div class="card-controls">
+            <button class="btn btn-secondary" id="prevCard" disabled>
+                <i class="fas fa-chevron-left"></i> Zurück
+            </button>
+            <button class="btn btn-secondary" id="shuffleCards">
+                <i class="fas fa-random"></i> Mischen
+            </button>
+            <button class="btn btn-secondary" id="nextCard">
+                Weiter <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        
+        <div class="card-container">
+            <div class="flashcard" id="flashcard" onclick="flipCard()">
+                <div class="flip-hint">Klicken zum Umdrehen</div>
+                <div class="card-face card-front">
+                    <div class="card-category" id="cardCategory">Kategorie</div>
+                    <div class="card-term" id="cardTerm">Begriff wird geladen...</div>
+                </div>
+                <div class="card-face card-back">
+                    <div id="monolingualContent">
+                        <div class="card-definition" id="cardDefinition">Definition wird geladen...</div>
+                        <div class="card-example" id="cardExample">Beispiel wird geladen...</div>
+                    </div>
+                    <div id="bilingualContent" class="bilingual-content hidden">
+                        <div class="language-section german">
+                            <div class="language-label" id="germanLabel">🇩🇪 Deutsch</div>
+                            <div class="language-term" id="germanTerm">Begriff</div>
+                            <div class="language-definition" id="germanDefinition">Definition</div>
+                            <div class="language-example" id="germanExample">Beispiel</div>
+                        </div>
+                        <div class="language-section foreign">
+                            <div class="language-label" id="foreignLabel">🇬🇧 English</div>
+                            <div class="language-term" id="foreignTerm">Term</div>
+                            <div class="language-definition" id="foreignDefinition">Definition</div>
+                            <div class="language-example" id="foreignExample">Example</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="difficulty-buttons">
+            <button class="difficulty-btn easy" onclick="markDifficulty('easy')">
+                <i class="fas fa-smile"></i> Einfach
+            </button>
+            <button class="difficulty-btn medium" onclick="markDifficulty('medium')">
+                <i class="fas fa-meh"></i> Mittel
+            </button>
+            <button class="difficulty-btn hard" onclick="markDifficulty('hard')">
+                <i class="fas fa-frown"></i> Schwer
+            </button>
+        </div>
+    </div>
+    
+    <div id="sessionComplete" class="session-complete hidden">
+        <h2><i class="fas fa-trophy"></i> Session abgeschlossen!</h2>
+        <p>Großartig! Sie haben alle Karten dieser Session durchgearbeitet.</p>
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-4); margin: var(--spacing-6) 0;">
+            <div class="stat-item">
+                <div class="stat-value" id="easyCount">0</div>
+                <div class="stat-label">Einfach</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="mediumCount">0</div>
+                <div class="stat-label">Mittel</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="hardCount">0</div>
+                <div class="stat-label">Schwer</div>
+            </div>
+        </div>
+        <button class="btn btn-primary" onclick="startNewSession()">
+            <i class="fas fa-refresh"></i> Neue Session starten
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let begriffe = [];
+let currentCardIndex = 0;
+let sessionCards = [];
+let difficultyStats = { easy: 0, medium: 0, hard: 0 };
+let isFlipped = false;
+let sourceLanguage = 'de';
+let targetLanguage = localStorage.getItem('defaultTargetLanguage') || 'en';
+
+// Language mappings
+const languageLabels = {
+    'de': '🇩🇪 Deutsch',
+    'en': '🇬🇧 English',
+    'ar': '🇸🇦 العربية',  
+    'tr': '🇹🇷 Türkçe',
+    'ru': '🇷🇺 Русский',
+    'pl': '🇵🇱 Polski',
+    'it': '🇮🇹 Italiano',
+    'fr': '🇫🇷 Français',
+    'es': '🇪🇸 Español',
+    'pt': '🇵🇹 Português',
+    'nl': '🇳🇱 Nederlands',
+    'fa': '🇮🇷 فارسی',
+    'ur': '🇵🇰 اردو',
+    'hi': '🇮🇳 हिन्दी',
+    'zh': '🇨🇳 中文',
+    'vi': '🇻🇳 Tiếng Việt',
+    'th': '🇹🇭 ไทย',
+    'ro': '🇷🇴 Română',
+    'bg': '🇧🇬 Български',
+    'hr': '🇭🇷 Hrvatski',
+    'sr': '🇷🇸 Српски',
+    'sq': '🇦🇱 Shqip',
+    'hu': '🇭🇺 Magyar',
+    'cs': '🇨🇿 Čeština',
+    'sk': '🇸🇰 Slovenčina'
+};
+
+// Translation cache
+let translationCache = new Map();
+
+// Load begriffe data
+async function loadBegriffe() {
+    try {
+        const response = await fetch('/api/begriffe');
+        begriffe = await response.json();
+        console.log('Loaded begriffe keys:', Object.keys(begriffe[0])); // Debug keys
+        console.log('Loaded begriffe sample:', begriffe[0]); // Debug first item
+        startNewSession();
+    } catch (error) {
+        console.error('Error loading begriffe:', error);
+    }
+}
+
+// Start new learning session
+function startNewSession() {
+    // Reset stats
+    difficultyStats = { easy: 0, medium: 0, hard: 0 };
+    
+    // Select random 10 cards
+    sessionCards = [...begriffe].sort(() => Math.random() - 0.5).slice(0, 10);
+    currentCardIndex = 0;
+    
+    // Show card session, hide completion
+    document.getElementById('cardSession').classList.remove('hidden');
+    document.getElementById('sessionComplete').classList.add('hidden');
+    
+    displayCard();
+    updateProgress();
+}
+
+// Display current card
+async function displayCard() {
+    if (currentCardIndex >= sessionCards.length) {
+        endSession();
+        return;
+    }
+    
+    const card = sessionCards[currentCardIndex];
+    
+    // Reset flip state
+    document.getElementById('flashcard').classList.remove('flipped');
+    isFlipped = false;
+    
+    // Update card content
+    document.getElementById('cardCategory').textContent = card.kategorie;
+    document.getElementById('cardTerm').textContent = card.begriff;
+    
+    console.log('Source language:', sourceLanguage);
+    console.log('Target language:', targetLanguage);
+    console.log('Card data:', card);
+    
+    if (targetLanguage) {
+        // Show bilingual mode with live translation
+        await updateBilingualCardLive(card);
+    } else {
+        // Show monolingual mode
+        updateMonolingualCard(card);
+    }
+    
+    updateProgress();
+    updateNavigation();
+}
+
+// Update monolingual card content
+function updateMonolingualCard(card) {
+    document.getElementById('monolingualContent').classList.remove('hidden');
+    document.getElementById('bilingualContent').classList.add('hidden');
+    
+    document.getElementById('cardDefinition').textContent = card.erklaerung;
+    document.getElementById('cardExample').textContent = card.beispiel ? `Beispiel: ${card.beispiel}` : '';
+}
+
+// Update bilingual card content with live translation
+async function updateBilingualCardLive(card) {
+    document.getElementById('monolingualContent').classList.add('hidden');
+    document.getElementById('bilingualContent').classList.remove('hidden');
+    
+    // Get source content based on source language
+    let sourceTerm = card.begriff;
+    let sourceDefinition = card.erklaerung;
+    let sourceExample = card.beispiel;
+    
+    // Source language side
+    document.getElementById('germanTerm').textContent = sourceTerm;
+    document.getElementById('germanDefinition').textContent = sourceDefinition;
+    document.getElementById('germanExample').textContent = sourceExample ? `Beispiel: ${sourceExample}` : '';
+    document.getElementById('germanLabel').textContent = languageLabels[sourceLanguage];
+    
+    // Target language side - show loading first
+    document.getElementById('foreignLabel').textContent = languageLabels[targetLanguage];
+    document.getElementById('foreignTerm').textContent = 'Übersetze...';
+    document.getElementById('foreignDefinition').textContent = 'Übersetzung wird geladen...';
+    document.getElementById('foreignExample').textContent = '';
+    
+    try {
+        console.log('Translating from', sourceLanguage, 'to', targetLanguage);
+        console.log('Translating term:', sourceTerm);
+        
+        // Translate all content
+        const [translatedTerm, translatedDefinition, translatedExample] = await Promise.all([
+            translateText(sourceTerm, sourceLanguage, targetLanguage),
+            translateText(sourceDefinition, sourceLanguage, targetLanguage),
+            sourceExample ? translateText(sourceExample, sourceLanguage, targetLanguage) : Promise.resolve('')
+        ]);
+        
+        console.log('Translation results:', { translatedTerm, translatedDefinition, translatedExample });
+        
+        // Update with translations
+        document.getElementById('foreignTerm').textContent = translatedTerm;
+        document.getElementById('foreignDefinition').textContent = translatedDefinition;
+        document.getElementById('foreignExample').textContent = translatedExample ? `Example: ${translatedExample}` : '';
+        
+    } catch (error) {
+        console.error('Translation error:', error);
+        document.getElementById('foreignTerm').textContent = sourceTerm;
+        document.getElementById('foreignDefinition').textContent = 'Übersetzung fehlgeschlagen';
+        document.getElementById('foreignExample').textContent = '';
+    }
+}
+
+// Parse translation text 
+function parseTranslationText(translationText) {
+    if (!translationText) return {};
+    
+    try {
+        // Try to parse as JSON first
+        const parsed = JSON.parse(translationText);
+        return {
+            begriff: parsed.begriff || '',
+            erklaerung: parsed.erklaerung || '',
+            beispiel: parsed.beispiel || ''
+        };
+    } catch (e) {
+        // If not JSON, treat as simple translation text
+        return {
+            begriff: '',
+            erklaerung: translationText,
+            beispiel: ''
+        };
+    }
+}
+
+// Flip card
+function flipCard() {
+    const flashcard = document.getElementById('flashcard');
+    flashcard.classList.toggle('flipped');
+    isFlipped = !isFlipped;
+}
+
+// Mark difficulty and advance
+function markDifficulty(difficulty) {
+    difficultyStats[difficulty]++;
+    
+    // Move to next card
+    if (currentCardIndex < sessionCards.length - 1) {
+        currentCardIndex++;
+        displayCard();
+    } else {
+        endSession();
+    }
+}
+
+// Update progress indicator
+function updateProgress() {
+    const progress = ((currentCardIndex + 1) / sessionCards.length) * 100;
+    document.getElementById('sessionProgress').style.width = `${progress}%`;
+    document.getElementById('cardCounter').textContent = `Karte ${currentCardIndex + 1} von ${sessionCards.length}`;
+}
+
+// Update navigation buttons
+function updateNavigation() {
+    document.getElementById('prevCard').disabled = currentCardIndex === 0;
+    document.getElementById('nextCard').disabled = currentCardIndex >= sessionCards.length - 1;
+}
+
+// Navigation functions
+document.getElementById('prevCard').addEventListener('click', function() {
+    if (currentCardIndex > 0) {
+        currentCardIndex--;
+        displayCard();
+    }
+});
+
+document.getElementById('nextCard').addEventListener('click', function() {
+    if (currentCardIndex < sessionCards.length - 1) {
+        currentCardIndex++;
+        displayCard();
+    }
+});
+
+document.getElementById('shuffleCards').addEventListener('click', function() {
+    sessionCards = sessionCards.sort(() => Math.random() - 0.5);
+    currentCardIndex = 0;
+    displayCard();
+});
+
+// End session
+function endSession() {
+    document.getElementById('cardSession').classList.add('hidden');
+    document.getElementById('sessionComplete').classList.remove('hidden');
+    
+    // Update stats
+    document.getElementById('easyCount').textContent = difficultyStats.easy;
+    document.getElementById('mediumCount').textContent = difficultyStats.medium;
+    document.getElementById('hardCount').textContent = difficultyStats.hard;
+}
+
+// Language change handlers
+function changeSourceLanguage(value) {
+    sourceLanguage = value;
+    console.log('Source language changed to:', sourceLanguage);
+    
+    // Check if target language is same as source - if so, clear it
+    if (targetLanguage === sourceLanguage) {
+        targetLanguage = '';
+        document.getElementById('targetLanguageSelect').value = '';
+        showLanguageWarning('Zielsprache wurde geleert, da sie identisch mit der Ausgangssprache war.');
+    }
+    
+    // Update current card display if we're in a session
+    if (sessionCards.length > 0) {
+        displayCard();
+    }
+}
+
+function changeTargetLanguage(value) {
+    // Check if trying to set same language as source
+    if (value && value === sourceLanguage) {
+        showLanguageWarning('Ausgangs- und Zielsprache können nicht identisch sein!');
+        document.getElementById('targetLanguageSelect').value = '';
+        return;
+    }
+    
+    targetLanguage = value;
+    console.log('Target language changed to:', targetLanguage);
+    
+    // Update current card display if we're in a session
+    if (sessionCards.length > 0) {
+        displayCard();
+    }
+}
+
+// Show language warning message
+function showLanguageWarning(message) {
+    // Remove existing warning if any
+    const existingWarning = document.querySelector('.language-warning');
+    if (existingWarning) {
+        existingWarning.remove();
+    }
+    
+    // Create warning element
+    const warning = document.createElement('div');
+    warning.className = 'language-warning';
+    warning.style.cssText = `
+        background: #fef3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 8px 12px;
+        border-radius: 4px;
+        margin-top: 8px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    `;
+    warning.innerHTML = `
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>${message}</span>
+    `;
+    
+    // Add to language selector
+    const languageSelector = document.querySelector('.language-selector');
+    languageSelector.appendChild(warning);
+    
+    // Auto-remove after 4 seconds
+    setTimeout(() => {
+        if (warning.parentNode) {
+            warning.remove();
+        }
+    }, 4000);
+}
+
+// Google Translate API function
+async function translateText(text, fromLang, toLang) {
+    // Create cache key
+    const cacheKey = `${fromLang}-${toLang}-${text}`;
+    
+    // Check cache first
+    if (translationCache.has(cacheKey)) {
+        return translationCache.get(cacheKey);
+    }
+    
+    try {
+        // Use MyMemory Translation API (free alternative to Google Translate)
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`);
+        const data = await response.json();
+        
+        let translation = data.responseData.translatedText;
+        
+        // Store in cache
+        translationCache.set(cacheKey, translation);
+        
+        return translation;
+    } catch (error) {
+        console.log('Translation failed:', error);
+        return text; // Return original text if translation fails
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Set the target language dropdown to user's preferred default
+    if (targetLanguage) {
+        document.getElementById('targetLanguageSelect').value = targetLanguage;
+        console.log('Set target language dropdown to:', targetLanguage);
+    } else {
+        console.log('No default target language set');
+    }
+    loadBegriffe();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    switch(e.key) {
+        case ' ':
+        case 'Enter':
+            e.preventDefault();
+            flipCard();
+            break;
+        case '1':
+            markDifficulty('easy');
+            break;
+        case '2':
+            markDifficulty('medium');
+            break;
+        case '3':
+            markDifficulty('hard');
+            break;
+        case 'ArrowLeft':
+            document.getElementById('prevCard').click();
+            break;
+        case 'ArrowRight':
+            document.getElementById('nextCard').click();
+            break;
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Kurs Academy{% endblock %}</title>
+    
+    <!-- Bulma CSS 1.0.4 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.4/css/bulma.min.css">
+    
+    <!-- Force Light Mode - Disable Bulma Auto Dark Mode -->
+    <style>
+        :root {
+            color-scheme: light only;
+        }
+        
+        html[data-theme="light"] {
+            color-scheme: light;
+        }
+        
+        /* Force light mode variables */
+        html {
+            --bulma-scheme-main: hsl(0, 0%, 100%);
+            --bulma-scheme-main-bis: hsl(0, 0%, 98%);
+            --bulma-scheme-main-ter: hsl(0, 0%, 96%);
+            --bulma-text: hsl(0, 0%, 21%);
+            --bulma-text-strong: hsl(0, 0%, 21%);
+        }
+    </style>
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Bulma Toast -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-toast@2.4.4/dist/bulma-toast.min.css">
+    
+    <!-- Custom Theme -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}?v={{ range(1000,9999) | random }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% if session.user_id %}
+    <!-- Navigation -->
+    <nav class="navbar is-primary" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="{{ url_for('main.index') }}">
+                <i class="fas fa-graduation-cap mr-2"></i>
+                <strong>{% block brand_name %}Kurs Academy{% endblock %}</strong>
+            </a>
+            
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMain">
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        
+        <div id="navbarMain" class="navbar-menu">
+            <div class="navbar-start">
+                <a href="{{ url_for('main.index') }}" class="navbar-item">
+                    <span class="icon-text">
+                        <span class="icon"><i class="fas fa-home"></i></span>
+                        <span>Übersicht</span>
+                    </span>
+                </a>
+                
+                <a href="{{ url_for('main.content_view', content_type='begriff') }}" class="navbar-item">
+                    <span class="icon-text">
+                        <span class="icon"><i class="fas fa-th-large"></i></span>
+                        <span>Begriffe</span>
+                    </span>
+                </a>
+                
+                <a href="{{ url_for('main.content_view', content_type='quiz') }}" class="navbar-item">
+                    <span class="icon-text">
+                        <span class="icon"><i class="fas fa-brain"></i></span>
+                        <span>Quiz</span>
+                    </span>
+                </a>
+                
+                <a href="{{ url_for('main.content_view', content_type='lernkarte') }}" class="navbar-item">
+                    <span class="icon-text">
+                        <span class="icon"><i class="fas fa-layer-group"></i></span>
+                        <span>Lernkarten</span>
+                    </span>
+                </a>
+                
+                <a href="{{ url_for('main.dashboard') }}" class="navbar-item">
+                    <span class="icon-text">
+                        <span class="icon"><i class="fas fa-chart-line"></i></span>
+                        <span>Fortschritt</span>
+                    </span>
+                </a>
+            </div>
+            
+            <div class="navbar-end">
+                <div class="navbar-item has-dropdown is-hoverable">
+                    <a class="navbar-link">
+                        <span class="icon-text">
+                            <span class="icon"><i class="fas fa-user-circle"></i></span>
+                            <span>{{ session.username }}</span>
+                        </span>
+                    </a>
+                    <div class="navbar-dropdown is-right">
+                        <div class="navbar-item">
+                            <div>
+                                <p class="has-text-weight-bold">{{ session.username }}</p>
+                                <p class="is-size-7">
+                                    <span class="tag is-light">{{ session.user_language|upper }}</span>
+                                    {% if session.translate_to %}
+                                        <span class="tag is-info">→ {{ session.translate_to|upper }}</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <hr class="navbar-divider">
+                        <a href="{{ url_for('auth.logout') }}" class="navbar-item">
+                            <span class="icon-text">
+                                <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
+                                <span>Abmelden</span>
+                            </span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Content Area -->
+    <main>
+        {% block main %}
+        <section class="section">
+            <div class="container is-fluid">
+                {% block content %}{% endblock %}
+            </div>
+        </section>
+        {% endblock %}
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bulma-toast@2.4.4/dist/bulma-toast.min.js"></script>
+    
+    <!-- Flash Messages as Data Attributes -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="flash-message-data" style="display: none;" 
+                     data-message="{{ message }}" 
+                     data-type="{% if category == 'error' %}is-danger{% elif category == 'success' %}is-success{% elif category == 'warning' %}is-warning{% else %}is-info{% endif %}">
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <script>
+        // Force Light Mode - Prevent Auto Dark Mode
+        document.documentElement.setAttribute('data-theme', 'light');
+        document.documentElement.style.setProperty('color-scheme', 'light only');
+        
+        // Navbar burger toggle
+        document.addEventListener('DOMContentLoaded', () => {
+            const $navbarBurgers = Array.prototype.slice.call(document.querySelectorAll('.navbar-burger'), 0);
+            
+            if ($navbarBurgers.length > 0) {
+                $navbarBurgers.forEach( el => {
+                    el.addEventListener('click', () => {
+                        const target = el.dataset.target;
+                        const $target = document.getElementById(target);
+                        el.classList.toggle('is-active');
+                        $target.classList.toggle('is-active');
+                    });
+                });
+            }
+            
+            // Flash messages with Bulma Toast
+            const flashElements = document.querySelectorAll('.flash-message-data');
+            flashElements.forEach(el => {
+                bulmaToast.toast({
+                    message: el.dataset.message,
+                    type: el.dataset.type,
+                    duration: 5000,
+                    position: 'top-right',
+                    dismissible: true,
+                    pauseOnHover: true,
+                    animate: { in: 'fadeIn', out: 'fadeOut' }
+                });
+            });
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

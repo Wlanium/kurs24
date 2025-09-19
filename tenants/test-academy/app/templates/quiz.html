@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz - IHK Privatrecht{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+    .quiz-app {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: var(--spacing-6);
+    }
+    
+    .quiz-header {
+        text-align: center;
+        margin-bottom: var(--spacing-8);
+        padding: var(--spacing-6);
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        border-radius: var(--radius-xl);
+        color: white;
+    }
+    
+    .quiz-modes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-4);
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .quiz-mode-btn {
+        padding: var(--spacing-6);
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+    }
+    
+    .quiz-mode-btn:hover {
+        border-color: var(--primary-color);
+        background-color: color-mix(in srgb, var(--primary-color) 5%, white);
+    }
+    
+    .quiz-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-8);
+        box-shadow: var(--shadow-lg);
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .quiz-question {
+        font-size: var(--font-size-xl);
+        font-weight: 600;
+        margin-bottom: var(--spacing-6);
+        color: var(--gray-900);
+    }
+    
+    .quiz-options {
+        display: grid;
+        gap: var(--spacing-3);
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .quiz-option {
+        padding: var(--spacing-4);
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .quiz-option:hover {
+        border-color: var(--primary-color);
+        background-color: color-mix(in srgb, var(--primary-color) 5%, white);
+    }
+    
+    .quiz-option.selected {
+        border-color: var(--primary-color);
+        background-color: color-mix(in srgb, var(--primary-color) 10%, white);
+    }
+    
+    .quiz-option.correct {
+        border-color: var(--success-color);
+        background-color: color-mix(in srgb, var(--success-color) 10%, white);
+    }
+    
+    .quiz-option.incorrect {
+        border-color: var(--error-color);
+        background-color: color-mix(in srgb, var(--error-color) 10%, white);
+    }
+    
+    .quiz-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .quiz-result {
+        text-align: center;
+        padding: var(--spacing-4);
+        border-radius: var(--radius);
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .quiz-result.correct {
+        background-color: color-mix(in srgb, var(--success-color) 10%, white);
+        color: var(--success-color);
+    }
+    
+    .quiz-result.incorrect {
+        background-color: color-mix(in srgb, var(--error-color) 10%, white);
+        color: var(--error-color);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-app">
+    <div class="quiz-header">
+        <h1><i class="fas fa-question-circle"></i> Quiz-Modus</h1>
+        <p>Testen Sie Ihr Wissen über das Privatrecht</p>
+    </div>
+    
+    <div class="quiz-stats">
+        <span id="quizScore">Punkte: 0</span>
+        <span id="quizProgress">Bereit zum Start</span>
+    </div>
+    
+    <div id="quizModes" class="quiz-modes">
+        <button class="quiz-mode-btn" data-mode="definition">
+            <h3><i class="fas fa-book"></i> Definition finden</h3>
+            <p>Finden Sie die richtige Definition zum Begriff</p>
+        </button>
+        <button class="quiz-mode-btn" data-mode="reverse">
+            <h3><i class="fas fa-search"></i> Begriff finden</h3>
+            <p>Finden Sie den Begriff zur Definition</p>
+        </button>
+        <button class="quiz-mode-btn" data-mode="category">
+            <h3><i class="fas fa-tags"></i> Kategorie zuordnen</h3>
+            <p>Ordnen Sie Begriffe den richtigen Kategorien zu</p>
+        </button>
+        <button class="quiz-mode-btn" data-mode="difficulty">
+            <h3><i class="fas fa-chart-line"></i> Schwierigkeit</h3>
+            <p>Schätzen Sie die Schwierigkeit der Begriffe</p>
+        </button>
+    </div>
+    
+    <div id="quizContainer" class="hidden">
+        <div class="quiz-card">
+            <div class="quiz-question" id="quizQuestion"></div>
+            <div class="quiz-options" id="quizOptions"></div>
+            <div class="quiz-result hidden" id="quizResult"></div>
+            <div class="text-center">
+                <button id="nextQuizBtn" class="btn btn-primary hidden">Nächste Frage</button>
+                <button id="backToModes" class="btn btn-secondary">Zurück zur Modusauswahl</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentQuiz = null;
+let quizScore = 0;
+let quizQuestion = 1;
+let selectedMode = null;
+
+// Quiz Mode Selection
+document.querySelectorAll('.quiz-mode-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        selectedMode = this.dataset.mode;
+        startQuiz(selectedMode);
+    });
+});
+
+// Start Quiz
+function startQuiz(mode) {
+    document.getElementById('quizModes').classList.add('hidden');
+    document.getElementById('quizContainer').classList.remove('hidden');
+    
+    quizScore = 0;
+    quizQuestion = 1;
+    updateQuizStats();
+    
+    loadQuizQuestion(mode);
+}
+
+// Load Quiz Question
+function loadQuizQuestion(mode) {
+    fetch('/api/quiz')
+        .then(response => response.json())
+        .then(data => {
+            currentQuiz = data;
+            displayQuizQuestion(mode, data);
+        })
+        .catch(error => {
+            console.error('Error loading quiz:', error);
+        });
+}
+
+// Display Quiz Question
+function displayQuizQuestion(mode, data) {
+    const questionEl = document.getElementById('quizQuestion');
+    const optionsEl = document.getElementById('quizOptions');
+    const resultEl = document.getElementById('quizResult');
+    
+    resultEl.classList.add('hidden');
+    resultEl.className = 'quiz-result hidden';
+    
+    switch(mode) {
+        case 'definition':
+            questionEl.textContent = `Was bedeutet "${data.begriff}"?`;
+            break;
+        case 'reverse':
+            questionEl.textContent = `Welcher Begriff passt zu dieser Definition: "${data.correct_answer}"?`;
+            break;
+        case 'category':
+            questionEl.textContent = `Zu welcher Kategorie gehört "${data.begriff}"?`;
+            break;
+        case 'difficulty':
+            questionEl.textContent = `Wie schwierig ist der Begriff "${data.begriff}"?`;
+            break;
+    }
+    
+    optionsEl.innerHTML = '';
+    data.answers.forEach((answer, index) => {
+        const option = document.createElement('div');
+        option.className = 'quiz-option';
+        option.textContent = answer;
+        option.addEventListener('click', () => selectAnswer(option, answer, data.correct_answer));
+        optionsEl.appendChild(option);
+    });
+}
+
+// Select Answer
+function selectAnswer(optionEl, selectedAnswer, correctAnswer) {
+    const allOptions = document.querySelectorAll('.quiz-option');
+    allOptions.forEach(opt => opt.classList.remove('selected'));
+    optionEl.classList.add('selected');
+    
+    setTimeout(() => {
+        const isCorrect = selectedAnswer === correctAnswer;
+        
+        allOptions.forEach(opt => {
+            if (opt.textContent === correctAnswer) {
+                opt.classList.add('correct');
+            } else if (opt.textContent === selectedAnswer && !isCorrect) {
+                opt.classList.add('incorrect');
+            }
+        });
+        
+        showQuizResult(isCorrect);
+        
+        if (isCorrect) {
+            quizScore += 10;
+        }
+        
+        quizQuestion++;
+        updateQuizStats();
+        
+        document.getElementById('nextQuizBtn').classList.remove('hidden');
+    }, 500);
+}
+
+// Show Quiz Result
+function showQuizResult(isCorrect) {
+    const resultEl = document.getElementById('quizResult');
+    resultEl.classList.remove('hidden');
+    
+    if (isCorrect) {
+        resultEl.className = 'quiz-result correct';
+        resultEl.innerHTML = '<i class="fas fa-check-circle"></i> Richtig! +10 Punkte';
+    } else {
+        resultEl.className = 'quiz-result incorrect';
+        resultEl.innerHTML = '<i class="fas fa-times-circle"></i> Leider falsch. Die richtige Antwort war markiert.';
+    }
+}
+
+// Update Quiz Stats
+function updateQuizStats() {
+    document.getElementById('quizScore').textContent = `Punkte: ${quizScore}`;
+    document.getElementById('quizProgress').textContent = `Frage ${quizQuestion} von 10`;
+}
+
+// Next Question
+document.getElementById('nextQuizBtn').addEventListener('click', function() {
+    this.classList.add('hidden');
+    
+    if (quizQuestion <= 10) {
+        loadQuizQuestion(selectedMode);
+    } else {
+        endQuiz();
+    }
+});
+
+// Back to Modes
+document.getElementById('backToModes').addEventListener('click', function() {
+    document.getElementById('quizContainer').classList.add('hidden');
+    document.getElementById('quizModes').classList.remove('hidden');
+    
+    quizScore = 0;
+    quizQuestion = 1;
+    document.getElementById('quizProgress').textContent = 'Bereit zum Start';
+    document.getElementById('quizScore').textContent = 'Punkte: 0';
+});
+
+// End Quiz
+function endQuiz() {
+    const resultEl = document.getElementById('quizResult');
+    resultEl.className = 'quiz-result';
+    resultEl.innerHTML = `
+        <h3><i class="fas fa-trophy"></i> Quiz beendet!</h3>
+        <p>Ihre Endpunktzahl: ${quizScore} Punkte</p>
+        <p>Sie haben ${Math.round((quizScore/100)*100)}% der Fragen richtig beantwortet.</p>
+    `;
+    resultEl.classList.remove('hidden');
+    
+    document.getElementById('quizQuestion').textContent = 'Herzlichen Glückwunsch!';
+    document.getElementById('quizOptions').innerHTML = '';
+    document.getElementById('nextQuizBtn').classList.add('hidden');
+}
+</script>
+{% endblock %}

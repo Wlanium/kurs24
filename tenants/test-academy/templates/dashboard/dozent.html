@@ -1,0 +1,823 @@
+{% extends "base.html" %}
+
+{% block title %}Dozenten Dashboard - {{ course.title if course else 'Kurs Management' }}{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<section class="hero is-info">
+    <div class="hero-body">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div>
+                        <h1 class="title is-2 has-text-white">
+                            <span class="icon-text">
+                                <span class="icon">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                </span>
+                                <span>Dozenten Dashboard</span>
+                            </span>
+                        </h1>
+                        <p class="subtitle is-4 has-text-white">
+                            {{ course.title if course else 'Kurs Management System' }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="tags has-addons">
+                        <span class="tag is-dark">Rolle</span>
+                        <span class="tag is-warning">{{ session.role|title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Quick Stats Cards -->
+<section class="section pb-0">
+    <div class="columns">
+        <div class="column is-3">
+            <div class="box has-text-centered">
+                <div class="content-type-icon mx-auto mb-3" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                    <i class="fas fa-users"></i>
+                </div>
+                <p class="title is-3 has-text-primary">{{ stats.total_users or 0 }}</p>
+                <p class="subtitle is-6">Aktive Lernende</p>
+                <div class="level">
+                    <div class="level-item">
+                        <div class="has-text-centered">
+                            <p class="heading">Heute aktiv</p>
+                            <p class="title is-6">{{ stats.active_today or 0 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="column is-3">
+            <div class="box has-text-centered">
+                <div class="content-type-icon mx-auto mb-3" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <p class="title is-3 has-text-success">{{ stats.avg_progress or 0 }}%</p>
+                <p class="subtitle is-6">Durchschnittlicher Fortschritt</p>
+                <div class="level">
+                    <div class="level-item">
+                        <div class="has-text-centered">
+                            <p class="heading">Abgeschlossen</p>
+                            <p class="title is-6">{{ stats.completed_users or 0 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="column is-3">
+            <div class="box has-text-centered">
+                <div class="content-type-icon mx-auto mb-3" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <i class="fas fa-book-open"></i>
+                </div>
+                <p class="title is-3 has-text-warning">{{ stats.total_content or 0 }}</p>
+                <p class="subtitle is-6">Lerninhalte</p>
+                <div class="level">
+                    <div class="level-item">
+                        <div class="has-text-centered">
+                            <p class="heading">Begriffe</p>
+                            <p class="title is-6">{{ stats.begriffe_count or 0 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="column is-3">
+            <div class="box has-text-centered">
+                <div class="content-type-icon mx-auto mb-3" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <p class="title is-3 has-text-purple">{{ stats.quiz_avg or 0 }}%</p>
+                <p class="subtitle is-6">Quiz-Durchschnitt</p>
+                <div class="level">
+                    <div class="level-item">
+                        <div class="has-text-centered">
+                            <p class="heading">Versuche</p>
+                            <p class="title is-6">{{ stats.total_attempts or 0 }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Management Tabs -->
+<section class="section">
+    <div class="tabs is-boxed is-large">
+        <ul>
+            <li class="is-active" data-tab="overview">
+                <a>
+                    <span class="icon"><i class="fas fa-tachometer-alt"></i></span>
+                    <span>Übersicht</span>
+                </a>
+            </li>
+            <li data-tab="users">
+                <a>
+                    <span class="icon"><i class="fas fa-users"></i></span>
+                    <span>Teilnehmer</span>
+                </a>
+            </li>
+            <li data-tab="content">
+                <a>
+                    <span class="icon"><i class="fas fa-edit"></i></span>
+                    <span>Inhalte</span>
+                </a>
+            </li>
+            <li data-tab="analytics">
+                <a>
+                    <span class="icon"><i class="fas fa-chart-bar"></i></span>
+                    <span>Analytics</span>
+                </a>
+            </li>
+        </ul>
+    </div>
+    
+    <!-- Overview Tab -->
+    <div class="tab-content is-active" id="overview">
+        <div class="columns">
+            <!-- Recent Activity -->
+            <div class="column is-8">
+                <div class="box">
+                    <h3 class="title is-4">📈 Lernaktivität (letzte 7 Tage)</h3>
+                    <div class="content">
+                        <canvas id="activityChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Top Performers -->
+                <div class="box">
+                    <h3 class="title is-4">🏆 Top Performer</h3>
+                    <div class="table-container">
+                        <table class="table is-fullwidth is-striped">
+                            <thead>
+                                <tr>
+                                    <th>Rang</th>
+                                    <th>Teilnehmer</th>
+                                    <th>Fortschritt</th>
+                                    <th>Quiz-Score</th>
+                                    <th>Letzte Aktivität</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topPerformersTable">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="column is-4">
+                <div class="box">
+                    <h3 class="title is-5">⚡ Schnellaktionen</h3>
+                    <div class="field">
+                        <button class="button is-primary is-fullwidth" onclick="addNewContent()">
+                            <span class="icon"><i class="fas fa-plus"></i></span>
+                            <span>Neuen Inhalt hinzufügen</span>
+                        </button>
+                    </div>
+                    <div class="field">
+                        <button class="button is-info is-fullwidth" onclick="exportProgress()">
+                            <span class="icon"><i class="fas fa-download"></i></span>
+                            <span>Fortschritt exportieren</span>
+                        </button>
+                    </div>
+                    <div class="field">
+                        <button class="button is-success is-fullwidth" onclick="sendMessage()">
+                            <span class="icon"><i class="fas fa-envelope"></i></span>
+                            <span>Nachricht senden</span>
+                        </button>
+                    </div>
+                    <div class="field">
+                        <button class="button is-warning is-fullwidth" onclick="manageUsers()">
+                            <span class="icon"><i class="fas fa-user-cog"></i></span>
+                            <span>Nutzer verwalten</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Difficult Content -->
+                <div class="box">
+                    <h3 class="title is-5">⚠️ Schwierige Inhalte</h3>
+                    <div class="content">
+                        <div id="difficultContent">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Users Tab -->
+    <div class="tab-content" id="users">
+        <div class="box">
+            <div class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <h3 class="title is-4">👥 Teilnehmer-Verwaltung</h3>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        <div class="field has-addons">
+                            <div class="control">
+                                <input class="input" type="text" placeholder="Teilnehmer suchen..." id="userSearch">
+                            </div>
+                            <div class="control">
+                                <button class="button is-primary">
+                                    <span class="icon"><i class="fas fa-search"></i></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Teilnehmer</th>
+                            <th>Sprache</th>
+                            <th>Fortschritt</th>
+                            <th>Quiz-Score</th>
+                            <th>Letzte Aktivität</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTable">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Content Tab -->
+    <div class="tab-content" id="content">
+        <div class="box">
+            <div class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        <h3 class="title is-4">📝 Content Management</h3>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        <button class="button is-primary" onclick="addNewContent()">
+                            <span class="icon"><i class="fas fa-plus"></i></span>
+                            <span>Neuen Inhalt erstellen</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Filter -->
+            <div class="field is-grouped">
+                <div class="control">
+                    <div class="select">
+                        <select id="contentTypeFilter" onchange="filterContent()">
+                            <option value="">Alle Inhaltstypen</option>
+                            <option value="begriff">Begriffe</option>
+                            <option value="quiz">Quiz</option>
+                            <option value="lernkarte">Lernkarten</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="control">
+                    <div class="select">
+                        <select id="contentStatusFilter" onchange="filterContent()">
+                            <option value="">Alle Status</option>
+                            <option value="active">Aktiv</option>
+                            <option value="draft">Entwurf</option>
+                            <option value="disabled">Deaktiviert</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="table-container">
+                <table class="table is-fullwidth is-hoverable">
+                    <thead>
+                        <tr>
+                            <th>Titel</th>
+                            <th>Typ</th>
+                            <th>Kategorie</th>
+                            <th>Schwierigkeit</th>
+                            <th>Status</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contentTable">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Analytics Tab -->
+    <div class="tab-content" id="analytics">
+        <div class="columns">
+            <div class="column is-6">
+                <div class="box">
+                    <h3 class="title is-4">📊 Fortschritts-Verteilung</h3>
+                    <canvas id="progressChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+            <div class="column is-6">
+                <div class="box">
+                    <h3 class="title is-4">🧠 Quiz-Performance</h3>
+                    <canvas id="quizChart" width="400" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="box">
+            <h3 class="title is-4">📈 Detaillierte Statistiken</h3>
+            <div class="columns">
+                <div class="column is-4">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ stats.total_sessions or 0 }}</div>
+                        <div class="stat-label">Lern-Sessions</div>
+                    </div>
+                </div>
+                <div class="column is-4">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ stats.avg_session_time or 0 }}m</div>
+                        <div class="stat-label">Ø Session-Dauer</div>
+                    </div>
+                </div>
+                <div class="column is-4">
+                    <div class="stat-card">
+                        <div class="stat-value">{{ stats.completion_rate or 0 }}%</div>
+                        <div class="stat-label">Abschlussrate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Content Edit Modal -->
+<div class="modal" id="contentModal">
+    <div class="modal-background" onclick="closeContentModal()"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title" id="modalTitle">Inhalt bearbeiten</p>
+            <button class="delete" onclick="closeContentModal()"></button>
+        </header>
+        <section class="modal-card-body">
+            <form id="contentForm">
+                <div class="field">
+                    <label class="label">Titel</label>
+                    <div class="control">
+                        <input class="input" type="text" id="contentTitle" required>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Typ</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select id="contentType">
+                                <option value="begriff">Begriff</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="lernkarte">Lernkarte</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Definition/Inhalt</label>
+                    <div class="control">
+                        <textarea class="textarea" id="contentDefinition" rows="4"></textarea>
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Kategorie</label>
+                    <div class="control">
+                        <input class="input" type="text" id="contentCategory">
+                    </div>
+                </div>
+                
+                <div class="field">
+                    <label class="label">Schwierigkeit</label>
+                    <div class="control">
+                        <div class="select is-fullwidth">
+                            <select id="contentDifficulty">
+                                <option value="leicht">Leicht</option>
+                                <option value="mittel">Mittel</option>
+                                <option value="schwer">Schwer</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-success" onclick="saveContent()">Speichern</button>
+            <button class="button" onclick="closeContentModal()">Abbrechen</button>
+        </footer>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Tab Management
+document.addEventListener('DOMContentLoaded', () => {
+    // Tab switching
+    document.querySelectorAll('.tabs li').forEach(tab => {
+        tab.addEventListener('click', () => {
+            const targetTab = tab.dataset.tab;
+            
+            // Update tabs
+            document.querySelectorAll('.tabs li').forEach(t => t.classList.remove('is-active'));
+            tab.classList.add('is-active');
+            
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('is-active'));
+            document.getElementById(targetTab).classList.add('is-active');
+            
+            // Load data for specific tabs
+            if (targetTab === 'users') {
+                loadUsers();
+            } else if (targetTab === 'content') {
+                loadContent();
+            } else if (targetTab === 'analytics') {
+                loadAnalytics();
+            }
+        });
+    });
+    
+    // Load initial data
+    loadOverviewData();
+    loadCharts();
+});
+
+// Data Loading Functions
+async function loadOverviewData() {
+    try {
+        const response = await fetch('/api/dozent/overview');
+        const data = await response.json();
+        
+        updateTopPerformers(data.top_performers);
+        updateDifficultContent(data.difficult_content);
+    } catch (error) {
+        console.error('Error loading overview data:', error);
+    }
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch('/api/dozent/users');
+        const users = await response.json();
+        
+        const tbody = document.getElementById('usersTable');
+        tbody.innerHTML = '';
+        
+        users.forEach(user => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <div class="media">
+                        <div class="media-left">
+                            <figure class="image is-32x32">
+                                <div class="has-background-primary has-text-white is-flex is-align-items-center is-justify-content-center" style="width: 32px; height: 32px; border-radius: 50%;">
+                                    ${user.username.charAt(0).toUpperCase()}
+                                </div>
+                            </figure>
+                        </div>
+                        <div class="media-content">
+                            <p class="has-text-weight-bold">${user.username}</p>
+                            <p class="is-size-7 has-text-grey">${user.email}</p>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="tag is-light">
+                        ${user.preferred_language.toUpperCase()}
+                        ${user.translate_to ? '→ ' + user.translate_to.toUpperCase() : ''}
+                    </span>
+                </td>
+                <td>
+                    <progress class="progress is-primary" value="${user.progress}" max="100">${user.progress}%</progress>
+                </td>
+                <td>
+                    <span class="tag ${user.quiz_score >= 80 ? 'is-success' : user.quiz_score >= 60 ? 'is-warning' : 'is-danger'}">
+                        ${user.quiz_score}%
+                    </span>
+                </td>
+                <td>
+                    <span class="is-size-7">${formatDate(user.last_activity)}</span>
+                </td>
+                <td>
+                    <div class="buttons are-small">
+                        <button class="button is-info" onclick="viewUserDetails(${user.id})">
+                            <span class="icon"><i class="fas fa-eye"></i></span>
+                        </button>
+                        <button class="button is-success" onclick="sendUserMessage(${user.id})">
+                            <span class="icon"><i class="fas fa-envelope"></i></span>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading users:', error);
+    }
+}
+
+async function loadContent() {
+    try {
+        const response = await fetch('/api/dozent/content');
+        const content = await response.json();
+        
+        const tbody = document.getElementById('contentTable');
+        tbody.innerHTML = '';
+        
+        content.forEach(item => {
+            const data = JSON.parse(item.content_data);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>
+                    <strong>${item.title}</strong>
+                </td>
+                <td>
+                    <span class="tag is-primary">${item.type}</span>
+                </td>
+                <td>${data.kategorie || 'Allgemein'}</td>
+                <td>
+                    <span class="tag ${data.schwierigkeit === 'leicht' ? 'is-success' : 
+                                     data.schwierigkeit === 'mittel' ? 'is-warning' : 'is-danger'}">
+                        ${data.schwierigkeit || 'mittel'}
+                    </span>
+                </td>
+                <td>
+                    <span class="tag ${item.status === 'active' ? 'is-success' : 'is-warning'}">
+                        ${item.status}
+                    </span>
+                </td>
+                <td>
+                    <div class="buttons are-small">
+                        <button class="button is-info" onclick="editContent(${item.id})">
+                            <span class="icon"><i class="fas fa-edit"></i></span>
+                        </button>
+                        <button class="button is-danger" onclick="deleteContent(${item.id})">
+                            <span class="icon"><i class="fas fa-trash"></i></span>
+                        </button>
+                    </div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error loading content:', error);
+    }
+}
+
+function loadCharts() {
+    // Activity Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    new Chart(activityCtx, {
+        type: 'line',
+        data: {
+            labels: ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'],
+            datasets: [{
+                label: 'Aktive Nutzer',
+                data: [12, 19, 8, 15, 25, 8, 14],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+function loadAnalytics() {
+    // Progress Distribution Chart
+    const progressCtx = document.getElementById('progressChart').getContext('2d');
+    new Chart(progressCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['0-25%', '26-50%', '51-75%', '76-100%'],
+            datasets: [{
+                data: [2, 3, 8, 15],
+                backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981']
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+    
+    // Quiz Performance Chart
+    const quizCtx = document.getElementById('quizChart').getContext('2d');
+    new Chart(quizCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Kaufvertrag', 'Gewährleistung', 'Widerrufsrecht', 'AGB', 'Garantie'],
+            datasets: [{
+                label: 'Durchschnittsscore',
+                data: [85, 67, 92, 78, 88],
+                backgroundColor: '#10b981'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+}
+
+// Helper Functions
+function updateTopPerformers(performers) {
+    const tbody = document.getElementById('topPerformersTable');
+    tbody.innerHTML = '';
+    
+    if (!performers) {
+        tbody.innerHTML = '<tr><td colspan="5" class="has-text-centered">Keine Daten verfügbar</td></tr>';
+        return;
+    }
+    
+    performers.forEach((performer, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <span class="tag ${index < 3 ? 'is-warning' : 'is-light'}">
+                    ${index + 1}
+                </span>
+            </td>
+            <td>${performer.username}</td>
+            <td>
+                <progress class="progress is-success" value="${performer.progress}" max="100">${performer.progress}%</progress>
+            </td>
+            <td><span class="tag is-success">${performer.quiz_score}%</span></td>
+            <td>${formatDate(performer.last_activity)}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateDifficultContent(content) {
+    const container = document.getElementById('difficultContent');
+    container.innerHTML = '';
+    
+    if (!content || content.length === 0) {
+        container.innerHTML = '<p class="has-text-grey">Alle Inhalte werden gut verstanden! 🎉</p>';
+        return;
+    }
+    
+    content.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'notification is-warning is-light mb-2';
+        div.innerHTML = `
+            <div class="level is-mobile">
+                <div class="level-left">
+                    <div class="level-item">
+                        <strong>${item.title}</strong>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        <span class="tag is-danger">${item.error_rate}% Fehler</span>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// Modal Functions
+function editContent(contentId) {
+    // TODO: Load content data and show modal
+    document.getElementById('contentModal').classList.add('is-active');
+}
+
+function closeContentModal() {
+    document.getElementById('contentModal').classList.remove('is-active');
+}
+
+function saveContent() {
+    // TODO: Save content changes
+    bulmaToast.toast({
+        message: 'Inhalt gespeichert!',
+        type: 'is-success',
+        duration: 3000
+    });
+    closeContentModal();
+}
+
+// Action Functions
+function addNewContent() {
+    editContent(null); // Open modal for new content
+}
+
+function exportProgress() {
+    bulmaToast.toast({
+        message: 'Export wird vorbereitet...',
+        type: 'is-info',
+        duration: 3000
+    });
+}
+
+function sendMessage() {
+    bulmaToast.toast({
+        message: 'Nachrichtenfunktion wird implementiert...',
+        type: 'is-info',
+        duration: 3000
+    });
+}
+
+function manageUsers() {
+    // Switch to users tab
+    document.querySelector('[data-tab="users"]').click();
+}
+
+function viewUserDetails(userId) {
+    bulmaToast.toast({
+        message: 'Benutzerdetails werden geladen...',
+        type: 'is-info',
+        duration: 3000
+    });
+}
+
+function sendUserMessage(userId) {
+    bulmaToast.toast({
+        message: 'Nachricht an Benutzer wird geöffnet...',
+        type: 'is-info',
+        duration: 3000
+    });
+}
+
+function deleteContent(contentId) {
+    if (confirm('Möchten Sie diesen Inhalt wirklich löschen?')) {
+        bulmaToast.toast({
+            message: 'Inhalt gelöscht!',
+            type: 'is-success',
+            duration: 3000
+        });
+    }
+}
+
+// Utility Functions
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Heute';
+    if (diffDays === 2) return 'Gestern';
+    if (diffDays < 7) return `vor ${diffDays} Tagen`;
+    
+    return date.toLocaleDateString('de-DE');
+}
+
+function filterContent() {
+    const typeFilter = document.getElementById('contentTypeFilter').value;
+    const statusFilter = document.getElementById('contentStatusFilter').value;
+    
+    // TODO: Implement filtering logic
+    loadContent();
+}
+
+// Search Function
+document.getElementById('userSearch')?.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    // TODO: Implement user search
+});
+</script>
+{% endblock %}

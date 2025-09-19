@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privatrecht Lernsystem - Anmeldung</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --radius: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: var(--surface);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            min-height: 600px;
+        }
+
+        .login-left {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-left::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.1"><circle cx="30" cy="30" r="4"/></g></svg>') repeat;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .login-brand {
+            position: relative;
+            z-index: 1;
+        }
+
+        .login-brand h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .login-brand .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .feature-list {
+            list-style: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            font-size: 1.1rem;
+        }
+
+        .feature-list i {
+            background: rgba(255, 255, 255, 0.2);
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-right {
+            padding: 60px 40px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-tabs {
+            display: flex;
+            background: var(--background);
+            border-radius: var(--radius);
+            padding: 4px;
+            margin-bottom: 40px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            border-radius: calc(var(--radius) - 4px);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+        }
+
+        .auth-tab.active {
+            background: var(--surface);
+            color: var(--primary-color);
+            box-shadow: var(--shadow);
+        }
+
+        .auth-form {
+            display: none;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 1rem;
+            transition: all 0.2s;
+            background: var(--surface);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);
+        }
+
+        .form-input.error {
+            border-color: var(--danger-color);
+        }
+
+        .password-input {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 1.1rem;
+        }
+
+        .form-submit {
+            width: 100%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .form-submit:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+        }
+
+        .form-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-submit.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .form-submit.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 12px 16px;
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: flex;
+        }
+
+        .error-message.success {
+            background: #ecfdf5;
+            border-color: #10b981;
+            color: #065f46;
+        }
+
+        .dozent-link {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+        }
+
+        .dozent-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: color 0.2s;
+        }
+
+        .dozent-link a:hover {
+            color: var(--primary-dark);
+        }
+
+        .form-hint {
+            display: block;
+            margin-top: 5px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        /* Verification Styles */
+        .verification-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .verification-icon {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .verification-info h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .verification-info p {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .verification-input {
+            text-align: center;
+            font-size: 1.5rem;
+            letter-spacing: 0.5em;
+            font-family: 'Courier New', monospace;
+        }
+
+        .verification-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .resend-btn, .back-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .resend-btn:hover {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .back-btn:hover {
+            background: var(--background);
+            border-color: var(--text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .login-container {
+                grid-template-columns: 1fr;
+                max-width: 400px;
+            }
+
+            .login-left {
+                padding: 40px 30px;
+                text-align: center;
+            }
+
+            .login-brand h1 {
+                font-size: 2rem;
+                justify-content: center;
+            }
+
+            .login-right {
+                padding: 40px 30px;
+            }
+
+            .feature-list {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-left">
+            <div class="login-brand">
+                <h1>
+                    <i class="fas fa-scale-balanced"></i>
+                    Privatrecht Lernsystem
+                </h1>
+                <p class="subtitle">
+                    Interaktive Begriffswand für den Rechtskurs.<br>
+                    Lerne die wichtigsten Begriffe des Privatrechts.
+                </p>
+            </div>
+            
+            <ul class="feature-list">
+                <li>
+                    <i class="fas fa-brain"></i>
+                    <span id="termsCount">Lade Begriffe...</span>
+                </li>
+                <li>
+                    <i class="fas fa-globe"></i>
+                    <span>Mehrsprachige Übersetzungen</span>
+                </li>
+                <li>
+                    <i class="fas fa-gamepad"></i>
+                    <span>Verschiedene Quiz-Modi</span>
+                </li>
+                <li>
+                    <i class="fas fa-chart-line"></i>
+                    <span>Persönlicher Fortschritt</span>
+                </li>
+                <li>
+                    <i class="fas fa-mobile-alt"></i>
+                    <span>Optimiert für alle Geräte</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="login-right">
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Anmelden</button>
+                <button class="auth-tab" data-tab="register">Registrieren</button>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span id="errorText"></span>
+            </div>
+            
+            {% if error_message %}
+            <div class="error-message show">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>{{ error_message }}</span>
+            </div>
+            {% endif %}
+
+            <!-- Login Form -->
+            <form class="auth-form active" id="loginForm">
+                <div class="form-group">
+                    <label class="form-label" for="loginUsername">Benutzername</label>
+                    <input 
+                        type="text" 
+                        id="loginUsername" 
+                        name="username" 
+                        class="form-input" 
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="loginPassword">Passwort</label>
+                    <div class="password-input">
+                        <input 
+                            type="password" 
+                            id="loginPassword" 
+                            name="password" 
+                            class="form-input" 
+                            required
+                            autocomplete="current-password"
+                        >
+                        <button type="button" class="password-toggle" data-target="loginPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="form-submit" id="loginSubmit">
+                    Anmelden
+                </button>
+            </form>
+
+            <!-- Verification Form -->
+            <form class="auth-form" id="verificationForm">
+                <div class="verification-info">
+                    <i class="fas fa-envelope-circle-check verification-icon"></i>
+                    <h3>Bestätigung erforderlich</h3>
+                    <p id="verificationMessage">Wir haben Ihnen einen 6-stelligen Code gesendet.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="verificationCode">6-stelliger Code</label>
+                    <input 
+                        type="text" 
+                        id="verificationCode" 
+                        name="verification_code" 
+                        class="form-input verification-input" 
+                        required
+                        maxlength="6"
+                        pattern="[0-9]{6}"
+                        placeholder="123456"
+                        autocomplete="one-time-code"
+                    >
+                </div>
+
+                <button type="submit" class="form-submit" id="verificationSubmit">
+                    Code bestätigen
+                </button>
+
+                <div class="verification-actions">
+                    <button type="button" class="resend-btn" id="resendCode">
+                        Code erneut senden
+                    </button>
+                    <button type="button" class="back-btn" id="backToRegister">
+                        Zurück zur Registrierung
+                    </button>
+                </div>
+            </form>
+
+            <!-- Register Form -->
+            <form class="auth-form" id="registerForm">
+                <div class="form-group">
+                    <label class="form-label" for="registerUsername">Benutzername</label>
+                    <input 
+                        type="text" 
+                        id="registerUsername" 
+                        name="username" 
+                        class="form-input" 
+                        required
+                        autocomplete="username"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="registerEmail">E-Mail oder Handynummer</label>
+                    <input 
+                        type="text" 
+                        id="registerEmail" 
+                        name="email" 
+                        class="form-input"
+                        required
+                        placeholder="max@beispiel.de oder +49 123 456789"
+                        autocomplete="email"
+                    >
+                    <small class="form-hint">E-Mail für Bestätigung oder Handynummer für SMS-Code</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="registerPassword">Passwort (min. 6 Zeichen)</label>
+                    <div class="password-input">
+                        <input 
+                            type="password" 
+                            id="registerPassword" 
+                            name="password" 
+                            class="form-input" 
+                            required
+                            minlength="6"
+                            autocomplete="new-password"
+                        >
+                        <button type="button" class="password-toggle" data-target="registerPassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="preferredLanguage">Bevorzugte Lernsprache</label>
+                    <select id="preferredLanguage" name="preferred_language" class="form-input">
+                        <option value="en">🇬🇧 English</option>
+                        <option value="ar">🇸🇦 العربية</option>
+                        <option value="tr">🇹🇷 Türkçe</option>
+                        <option value="ru">🇷🇺 Русский</option>
+                        <option value="pl">🇵🇱 Polski</option>
+                        <option value="it">🇮🇹 Italiano</option>
+                        <option value="fr">🇫🇷 Français</option>
+                        <option value="es">🇪🇸 Español</option>
+                    </select>
+                    <small class="form-hint">Diese Sprache wird als Standard für Übersetzungen verwendet</small>
+                </div>
+
+                <button type="submit" class="form-submit" id="registerSubmit">
+                    Registrieren
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let currentUserId = null;
+        let currentContactType = null;
+
+        // Tab switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                
+                // Update tabs
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update forms
+                document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+                document.getElementById(targetTab + 'Form').classList.add('active');
+                
+                // Clear error
+                hideError();
+            });
+        });
+
+        // Password toggle
+        document.querySelectorAll('.password-toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const targetId = toggle.dataset.target;
+                const input = document.getElementById(targetId);
+                const icon = toggle.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'fas fa-eye-slash';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'fas fa-eye';
+                }
+            });
+        });
+
+        // Form submissions
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleFormSubmit('/login', e.target, 'loginSubmit');
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleRegisterSubmit(e.target);
+        });
+
+        document.getElementById('verificationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await handleVerificationSubmit(e.target);
+        });
+
+        // Verification actions
+        document.getElementById('resendCode').addEventListener('click', async () => {
+            await resendVerificationCode();
+        });
+
+        document.getElementById('backToRegister').addEventListener('click', () => {
+            showForm('register');
+        });
+
+        async function handleFormSubmit(url, form, submitButtonId) {
+            const submitButton = document.getElementById(submitButtonId);
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Clear previous errors
+            hideError();
+            
+            // Set loading state
+            submitButton.classList.add('loading');
+            submitButton.disabled = true;
+            
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.href = result.redirect;
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                showError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+            } finally {
+                submitButton.classList.remove('loading');
+                submitButton.disabled = false;
+            }
+        }
+
+        async function handleRegisterSubmit(form) {
+            const submitButton = document.getElementById('registerSubmit');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Clear previous errors
+            hideError();
+            
+            // Set loading state
+            submitButton.classList.add('loading');
+            submitButton.disabled = true;
+            
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    if (result.requires_verification) {
+                        // Store user data for verification
+                        currentUserId = result.user_id;
+                        currentContactType = result.contact_type;
+                        
+                        // Update verification message
+                        document.getElementById('verificationMessage').textContent = result.message;
+                        
+                        // Show verification form
+                        showForm('verification');
+                    } else {
+                        window.location.href = result.redirect;
+                    }
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                showError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+            } finally {
+                submitButton.classList.remove('loading');
+                submitButton.disabled = false;
+            }
+        }
+
+        async function handleVerificationSubmit(form) {
+            const submitButton = document.getElementById('verificationSubmit');
+            const formData = new FormData(form);
+            const verificationCode = formData.get('verification_code');
+            
+            if (!currentUserId) {
+                showError('Sitzung abgelaufen. Bitte registrieren Sie sich erneut.');
+                return;
+            }
+            
+            // Clear previous errors
+            hideError();
+            
+            // Set loading state
+            submitButton.classList.add('loading');
+            submitButton.disabled = true;
+            
+            try {
+                const response = await fetch('/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUserId,
+                        verification_code: verificationCode
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    window.location.href = result.redirect;
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                showError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+            } finally {
+                submitButton.classList.remove('loading');
+                submitButton.disabled = false;
+            }
+        }
+
+        async function resendVerificationCode() {
+            if (!currentUserId) {
+                showError('Sitzung abgelaufen. Bitte registrieren Sie sich erneut.');
+                return;
+            }
+            
+            const resendBtn = document.getElementById('resendCode');
+            resendBtn.disabled = true;
+            resendBtn.textContent = 'Wird gesendet...';
+            
+            try {
+                const response = await fetch('/resend-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: currentUserId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showError(result.message, 'success');
+                } else {
+                    showError(result.message);
+                }
+            } catch (error) {
+                showError('Fehler beim Senden des Codes.');
+            } finally {
+                resendBtn.disabled = false;
+                resendBtn.textContent = 'Code erneut senden';
+            }
+        }
+
+        function showForm(formType) {
+            // Hide all forms
+            document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('active'));
+            
+            // Show target form
+            document.getElementById(formType + 'Form').classList.add('active');
+            
+            // Update tabs if needed
+            if (formType === 'login' || formType === 'register') {
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+                document.querySelector(`[data-tab="${formType}"]`).classList.add('active');
+            }
+            
+            // Clear errors
+            hideError();
+        }
+
+        function showError(message, type = 'error') {
+            const errorMessage = document.getElementById('errorMessage');
+            const errorText = document.getElementById('errorText');
+            errorText.textContent = message;
+            
+            // Update styling based on type
+            errorMessage.className = type === 'success' ? 'error-message success show' : 'error-message show';
+            
+            // Auto-hide success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    hideError();
+                }, 3000);
+            }
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+
+        // Clear error when user starts typing
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('input', () => {
+                hideError();
+                input.classList.remove('error');
+            });
+        });
+
+        // Load dynamic content on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Load terms count
+                const response = await fetch('/api/begriffe');
+                const begriffe = await response.json();
+                document.getElementById('termsCount').textContent = `${begriffe.length} wichtige Rechtsbegriffe`;
+            } catch (error) {
+                document.getElementById('termsCount').textContent = 'Rechtsbegriffe verfügbar';
+            }
+        });
+    </script>
+</body>
+</html>

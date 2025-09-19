@@ -1,0 +1,28 @@
+# Auto-generated Caddy config for test-academy
+test-academy.kurs24.io {
+    # Automatic SSL via Let's Encrypt
+    tls {
+        issuer acme
+    }
+
+    # Headers
+    header {
+        X-Tenant-ID "test-academy"
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+    }
+
+    # Reverse proxy to tenant container
+    reverse_proxy tenant-test-academy-app:5000 {
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Tenant-ID "test-academy"
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/test-academy.log
+        format json
+    }
+}

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dozenten-Dashboard - IHK Privatrecht</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dozent.css') }}">
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1><i class="fas fa-chalkboard-teacher"></i> Dozenten-Dashboard</h1>
+                <p class="header-subtitle">Interaktive Kurssteuerung - IHK Privatrecht</p>
+            </div>
+            <div class="header-controls">
+                <button id="presentationMode" class="control-btn">
+                    <i class="fas fa-desktop"></i> Präsentationsmodus
+                </button>
+                <button id="resetProgress" class="control-btn secondary">
+                    <i class="fas fa-refresh"></i> Reset
+                </button>
+                <a href="/admin/users" class="control-btn primary">
+                    <i class="fas fa-user-shield"></i> Benutzerverwaltung
+                </a>
+                <a href="/" class="control-btn secondary">
+                    <i class="fas fa-users"></i> Teilnehmer-Ansicht
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="course-stats">
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value" id="totalProgress">0%</div>
+                    <div class="stat-label">Gesamtfortschritt</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value">2,5</div>
+                    <div class="stat-label">Tage</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-users"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value" id="activeSession">0</div>
+                    <div class="stat-label">Aktuelle Einheit</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-content">
+                    <div class="stat-value" id="completedSessions">0/20</div>
+                    <div class="stat-label">Abgeschlossen</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="course-navigation">
+            <button id="prevSession" class="nav-btn" disabled>
+                <i class="fas fa-chevron-left"></i> Vorherige Einheit
+            </button>
+            <div class="current-session-display">
+                <span id="currentSessionDisplay">Einheit auswählen</span>
+            </div>
+            <button id="nextSession" class="nav-btn">
+                Nächste Einheit <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <div class="days-container">
+            <!-- TAG 1 -->
+            <div class="day-card day-1" data-day="1">
+                <div class="day-header">
+                    <div class="day-title">
+                        <i class="fas fa-calendar-day"></i>
+                        <span>Tag 1: Grundlagen & Alltag</span>
+                    </div>
+                    <div class="day-progress">
+                        <div class="progress-bar">
+                            <div class="progress-fill" data-progress="0"></div>
+                        </div>
+                        <span class="progress-text">0/8</span>
+                    </div>
+                </div>
+                
+                <div class="time-block">
+                    <div class="time-block-title">
+                        <i class="fas fa-sun"></i> Vormittag: Was ist Privatrecht?
+                    </div>
+                    
+                    <div class="session" data-session="1">
+                        <div class="session-header">
+                            <span class="session-number">1</span>
+                            <span class="session-title">Einstieg: Privatrecht vs. Öffentliches Recht</span>
+                            <div class="session-controls">
+                                <button class="session-btn start-btn" title="Starten">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="session-btn timer-btn" title="Timer">
+                                    <i class="fas fa-stopwatch"></i>
+                                </button>
+                                <button class="session-btn complete-btn" title="Abschließen">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="session-content">
+                            <div class="session-description">
+                                • Beispiele: Supermarkt vs. Ausländerbehörde<br>
+                                • 🎯 Übung: Kärtchen sortieren
+                            </div>
+                            <div class="session-materials">
+                                <div class="material-item">
+                                    <i class="fas fa-file-pdf"></i> Kärtchen-Set
+                                </div>
+                                <div class="material-item">
+                                    <i class="fas fa-laptop"></i> Begriffswand-Link
+                                </div>
+                            </div>
+                            <div class="session-notes">
+                                <textarea placeholder="Notizen für diese Einheit..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="session" data-session="2">
+                        <div class="session-header">
+                            <span class="session-number">2</span>
+                            <span class="session-title">Die wichtigsten Verträge im Alltag</span>
+                            <div class="session-controls">
+                                <button class="session-btn start-btn" title="Starten">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="session-btn timer-btn" title="Timer">
+                                    <i class="fas fa-stopwatch"></i>
+                                </button>
+                                <button class="session-btn complete-btn" title="Abschließen">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="session-content">
+                            <div class="session-description">
+                                • Kaufvertrag (Handy, Kleidung, Lebensmittel)<br>
+                                • Kassenzettel richtig lesen<br>
+                                • 🎯 Online-Quiz: "Ist das ein Vertrag?"
+                            </div>
+                            <div class="session-materials">
+                                <div class="material-item">
+                                    <i class="fas fa-receipt"></i> Echte Kassenbons
+                                </div>
+                                <div class="material-item">
+                                    <i class="fas fa-laptop"></i> Quiz-Modus
+                                </div>
+                            </div>
+                            <div class="session-notes">
+                                <textarea placeholder="Notizen für diese Einheit..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="session" data-session="3">
+                        <div class="session-header">
+                            <span class="session-number">3</span>
+                            <span class="session-title">Umtausch und Reklamation</span>
+                            <div class="session-controls">
+                                <button class="session-btn start-btn" title="Starten">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="session-btn timer-btn" title="Timer">
+                                    <i class="fas fa-stopwatch"></i>
+                                </button>
+                                <button class="session-btn complete-btn" title="Abschließen">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="session-content">
+                            <div class="session-description">
+                                • Wann darf ich umtauschen?<br>
+                                • Gewährleistung vs. Garantie<br>
+                                • 🎭 Rollenspiel: "Im Geschäft reklamieren"
+                            </div>
+                            <div class="session-materials">
+                                <div class="material-item">
+                                    <i class="fas fa-theater-masks"></i> Rollenspiel-Karten
+                                </div>
+                                <div class="material-item">
+                                    <i class="fas fa-balance-scale"></i> Rechts-Vergleich
+                                </div>
+                            </div>
+                            <div class="session-notes">
+                                <textarea placeholder="Notizen für diese Einheit..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="session" data-session="4">
+                        <div class="session-header">
+                            <span class="session-number">4</span>
+                            <span class="session-title">Online-Shopping & Widerrufsrecht</span>
+                            <div class="session-controls">
+                                <button class="session-btn start-btn" title="Starten">
+                                    <i class="fas fa-play"></i>
+                                </button>
+                                <button class="session-btn timer-btn" title="Timer">
+                                    <i class="fas fa-stopwatch"></i>
+                                </button>
+                                <button class="session-btn complete-btn" title="Abschließen">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="session-content">
+                            <div class="session-description">
+                                • 14-Tage-Regel verstehen<br>
+                                • Fallen bei Amazon, eBay & Co.<br>
+                                • 🎯 Interaktiv: "Fake-Shop erkennen"
+                            </div>
+                            <div class="session-materials">
+                                <div class="material-item">
+                                    <i class="fas fa-shield-alt"></i> Fake-Shop Demo
+                                </div>
+                                <div class="material-item">
+                                    <i class="fas fa-calendar-times"></i> 14-Tage-Rechner
+                                </div>
+                            </div>
+                            <div class="session-notes">
+                                <textarea placeholder="Notizen für diese Einheit..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="time-block">
+                    <div class="time-block-title">
+                        <i class="fas fa-sun"></i> Nachmittag: Wohnen in Deutschland
+                    </div>
+                    
+                    <!-- Sessions 5-8 würden hier folgen - verkürzt für Übersichtlichkeit -->
+                    <div class="session" data-session="5">
+                        <div class="session-header">
+                            <span class="session-number">5</span>
+                            <span class="session-title">Mietvertrag verstehen</span>
+                            <div class="session-controls">
+                                <button class="session-btn start-btn"><i class="fas fa-play"></i></button>
+                                <button class="session-btn timer-btn"><i class="fas fa-stopwatch"></i></button>
+                                <button class="session-btn complete-btn"><i class="fas fa-check"></i></button>
+                            </div>
+                        </div>
+                        <div class="session-content">
+                            <div class="session-description">
+                                • Kaltmiete, Nebenkosten, Kaution<br>
+                                • Was darf der Vermieter?
+                            </div>
+                            <div class="session-notes">
+                                <textarea placeholder="Notizen für diese Einheit..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sessions 6-8 hier... (verkürzt) -->
+                </div>
+            </div>
+            
+            <!-- TAG 2 und 3 würden hier folgen... -->
+        </div>
+
+        <div class="instructor-tools">
+            <div class="tool-section">
+                <h3><i class="fas fa-tools"></i> Kurs-Tools</h3>
+                <div class="tool-grid">
+                    <button class="tool-btn" onclick="window.open('/', '_blank')">
+                        <i class="fas fa-external-link-alt"></i>
+                        <span>Begriffswand öffnen</span>
+                    </button>
+                    <button class="tool-btn" onclick="openQuizMode()">
+                        <i class="fas fa-question-circle"></i>
+                        <span>Quiz starten</span>
+                    </button>
+                    <button class="tool-btn" onclick="toggleTimer()">
+                        <i class="fas fa-stopwatch"></i>
+                        <span>Timer</span>
+                    </button>
+                    <button class="tool-btn" onclick="exportProgress()">
+                        <i class="fas fa-download"></i>
+                        <span>Fortschritt exportieren</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="tool-section">
+                <h3><i class="fas fa-sticky-note"></i> Kurs-Notizen</h3>
+                <textarea id="globalNotes" placeholder="Allgemeine Notizen zum Kurs..."></textarea>
+                <button class="save-notes-btn">
+                    <i class="fas fa-save"></i> Notizen speichern
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Timer Modal -->
+    <div id="timerModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-stopwatch"></i> Session Timer</h3>
+                <button class="modal-close" id="closeTimer">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="timer-display">
+                    <div class="timer-time" id="timerDisplay">45:00</div>
+                    <div class="timer-session" id="timerSession">Einheit auswählen</div>
+                </div>
+                <div class="timer-controls">
+                    <button id="startTimer" class="timer-btn primary">
+                        <i class="fas fa-play"></i> Start
+                    </button>
+                    <button id="pauseTimer" class="timer-btn">
+                        <i class="fas fa-pause"></i> Pause
+                    </button>
+                    <button id="resetTimer" class="timer-btn">
+                        <i class="fas fa-refresh"></i> Reset
+                    </button>
+                </div>
+                <div class="timer-presets">
+                    <button class="preset-btn" data-minutes="30">30 Min</button>
+                    <button class="preset-btn" data-minutes="45">45 Min</button>
+                    <button class="preset-btn" data-minutes="60">60 Min</button>
+                    <button class="preset-btn" data-minutes="15">15 Min</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dozent.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,189 @@
+/* ==========================================================================
+   Kurs-Master Theme - Clean Bulma Overrides
+   ========================================================================== */
+
+/* Course Platform Brand Colors */
+:root {
+    --course-primary: #2563eb;
+    --course-secondary: #10b981;
+    --course-accent: #f59e0b;
+    --course-success: #10b981;
+    --course-warning: #f59e0b;
+    --course-danger: #ef4444;
+}
+
+/* Bulma Primary Color Override */
+.is-primary {
+    background-color: var(--course-primary) !important;
+}
+
+.button.is-primary {
+    background-color: var(--course-primary);
+    border-color: var(--course-primary);
+}
+
+.button.is-primary:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+/* Content Cards */
+.content-card {
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid hsl(0, 0%, 86%);
+    cursor: pointer;
+}
+
+.content-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+    border-color: var(--course-primary);
+}
+
+.content-card.completed {
+    border-color: var(--course-success);
+    background-color: #f0fdf4;
+}
+
+/* Progress Elements */
+.progress.is-course {
+    background-color: hsl(0, 0%, 96%);
+}
+
+.progress.is-course::-webkit-progress-value {
+    background: linear-gradient(135deg, var(--course-primary), var(--course-secondary));
+}
+
+.progress.is-course::-moz-progress-bar {
+    background: linear-gradient(135deg, var(--course-primary), var(--course-secondary));
+}
+
+/* Quiz Styling */
+.quiz-option {
+    border: 2px solid hsl(0, 0%, 86%);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quiz-option:hover {
+    border-color: var(--course-primary);
+    background-color: hsl(0, 0%, 98%);
+}
+
+.quiz-option.correct {
+    border-color: var(--course-success);
+    background-color: #f0fdf4;
+    color: #047857;
+}
+
+.quiz-option.wrong {
+    border-color: var(--course-danger);
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+/* Language Tags */
+.language-indicator {
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Content Type Icons */
+.content-type-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--course-primary), var(--course-secondary));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+/* Dashboard Stats */
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid hsl(0, 0%, 86%);
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--course-primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: hsl(0, 0%, 48%);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+}
+
+/* Translation Display */
+.translation-item {
+    padding: 0.75rem;
+    background: hsl(0, 0%, 98%);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    border-left: 4px solid var(--course-secondary);
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 768px) {
+    .content-card {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+    
+    .content-type-icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        font-size: 1rem;
+    }
+}
+
+/* Smooth Animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-in {
+    animation: slideInUp 0.3s ease-out;
+}
+
+/* Focus States for Accessibility */
+.button:focus,
+.input:focus,
+.textarea:focus,
+.select select:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}

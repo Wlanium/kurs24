@@ -1,0 +1,293 @@
+/* ==========================================================================
+   IHK Privatrecht - Bulma 1.0 Custom Theme Overrides
+   ========================================================================== */
+
+/* CRITICAL: Override any conflicting CSS from app.css or other sources */
+.container {
+    max-width: 1216px !important;
+    margin: 0 auto !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+.container.is-fluid {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+/* Force override any app-main styling conflicts */
+.app-main, .section {
+    padding: 1rem 0 !important;
+    min-height: auto !important;
+}
+
+/* Brand Colors for Privatrecht Theme */
+:root {
+    --privatrecht-primary: #2563eb;
+    --privatrecht-secondary: #10b981;
+    --privatrecht-accent: #f59e0b;
+    --privatrecht-gradient: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+
+/* Override Bulma Primary Color */
+.is-primary {
+    background-color: var(--privatrecht-primary) !important;
+}
+
+.has-background-primary {
+    background-color: var(--privatrecht-primary) !important;
+}
+
+.button.is-primary {
+    background-color: var(--privatrecht-primary);
+    border-color: var(--privatrecht-primary);
+}
+
+.button.is-primary:hover {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+}
+
+/* Custom gradient hero sections */
+.hero.is-gradient {
+    background: var(--privatrecht-gradient);
+}
+
+/* Begriff Cards Styling */
+.begriff-card {
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid #e5e7eb;
+    cursor: pointer;
+}
+
+.begriff-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    border-color: var(--privatrecht-primary);
+}
+
+.begriff-card.learned {
+    border-color: var(--privatrecht-secondary);
+    background-color: #f0fdf4;
+}
+
+/* Category Tags */
+.category-tag {
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Rechtliche Grundlagen */
+.category-rechtliche-grundlagen {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+/* Vertragsrecht */
+.category-vertragsrecht {
+    background-color: #d1fae5;
+    color: #047857;
+}
+
+/* Eigentumsrecht */
+.category-eigentumsrecht {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+/* Familienrecht */
+.category-familienrecht {
+    background-color: #fce7f3;
+    color: #be185d;
+}
+
+/* Erbrecht */
+.category-erbrecht {
+    background-color: #e0e7ff;
+    color: #5b21b6;
+}
+
+/* Progress Bar Custom Styling */
+.progress.is-privatrecht {
+    background-color: #f3f4f6;
+}
+
+.progress.is-privatrecht::-webkit-progress-value {
+    background: var(--privatrecht-gradient);
+}
+
+.progress.is-privatrecht::-moz-progress-bar {
+    background: var(--privatrecht-gradient);
+}
+
+/* Quiz Styling */
+.quiz-answer {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.quiz-answer:hover {
+    border-color: var(--privatrecht-primary);
+    background-color: #f8fafc;
+}
+
+.quiz-answer.correct {
+    border-color: var(--privatrecht-secondary);
+    background-color: #f0fdf4;
+    color: #047857;
+}
+
+.quiz-answer.wrong {
+    border-color: #ef4444;
+    background-color: #fef2f2;
+    color: #dc2626;
+}
+
+/* Modal Enhancements */
+.modal-card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.modal-card-head {
+    background: var(--privatrecht-gradient);
+    color: white;
+}
+
+.modal-card-title {
+    color: white;
+}
+
+.delete {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.delete:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Translation sections in modal */
+.translation-section {
+    border-left: 4px solid var(--privatrecht-primary);
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Stats Cards */
+.stat-card {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--privatrecht-primary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+}
+
+/* Learning Mode Toggle */
+.mode-toggle {
+    background: white;
+    border-radius: 12px;
+    padding: 0.25rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 0 1rem;
+    }
+    
+    .columns.is-mobile {
+        margin: 0 -0.5rem;
+    }
+    
+    .column {
+        padding: 0.5rem;
+    }
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--privatrecht-primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #1d4ed8;
+}
+
+/* Animations */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-slide-in {
+    animation: slideInUp 0.3s ease-out;
+}
+
+/* Focus states for accessibility */
+.button:focus,
+.input:focus,
+.textarea:focus,
+.select select:focus {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Print styles */
+@media print {
+    .navbar,
+    .button,
+    .modal {
+        display: none !important;
+    }
+    
+    .section {
+        padding: 1rem !important;
+    }
+}

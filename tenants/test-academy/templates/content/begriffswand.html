@@ -1,0 +1,439 @@
+{% extends "base.html" %}
+
+{% block title %}Begriffe lernen - {{ course.title if course else 'Mein Kurs' }}{% endblock %}
+
+{% block content %}
+<!-- Header with Search and Filters -->
+<div class="box">
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <h1 class="title is-3">
+                    <span class="icon-text">
+                        <span class="icon has-text-primary">
+                            <i class="fas fa-book-open"></i>
+                        </span>
+                        <span>Begriffe lernen</span>
+                    </span>
+                </h1>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <div class="tags has-addons">
+                    <span class="tag is-dark">Fortschritt</span>
+                    <span class="tag is-primary">{{ content|selectattr("is_completed")|list|length }}/{{ content|length }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <progress class="progress is-course" value="{{ ((content|selectattr('is_completed')|list|length) / content|length * 100) if content else 0 }}" max="100">
+        {{ ((content|selectattr('is_completed')|list|length) / content|length * 100)|round(1) if content else 0 }}%
+    </progress>
+</div>
+
+<!-- Search and Filter Controls -->
+<div class="box">
+    <div class="columns">
+        <div class="column is-8">
+            <div class="field has-addons">
+                <div class="control has-icons-left is-expanded">
+                    <input class="input is-large" type="text" id="searchInput" placeholder="Begriff suchen...">
+                    <span class="icon is-left">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+                <div class="control">
+                    <button class="button is-large is-primary" onclick="searchBegriffe()">
+                        <span class="icon">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="select is-large is-fullwidth">
+                <select id="categoryFilter" onchange="filterBegriffe()">
+                    <option value="">Alle Kategorien</option>
+                    <option value="rechtliche-grundlagen">Rechtliche Grundlagen</option>
+                    <option value="vertragsrecht">Vertragsrecht</option>
+                    <option value="eigentumsrecht">Eigentumsrecht</option>
+                    <option value="familienrecht">Familienrecht</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Tags -->
+    <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+            <div class="tags has-addons">
+                <span class="tag">Status:</span>
+                <span class="tag is-light">
+                    <input type="radio" name="statusFilter" value="all" checked> Alle
+                </span>
+                <span class="tag is-warning">
+                    <input type="radio" name="statusFilter" value="todo"> Zu lernen
+                </span>
+                <span class="tag is-success">
+                    <input type="radio" name="statusFilter" value="completed"> Gelernt
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Begriff Cards Grid -->
+<div class="columns is-multiline" id="begriffeGrid">
+    {% for begriff in content %}
+    <div class="column is-12-tablet is-6-desktop is-4-widescreen begriff-item" 
+         data-category="{{ begriff.content_data.kategorie if begriff.content_data.kategorie else 'general' }}"
+         data-completed="{{ 'true' if begriff.is_completed else 'false' }}">
+        
+        <div class="box content-card {{ 'completed' if begriff.is_completed else '' }}" 
+             onclick="openBegriffModal({{ begriff.id }})">
+            
+            <!-- Card Header -->
+            <div class="level is-mobile">
+                <div class="level-left">
+                    <div class="level-item">
+                        <span class="tag category-tag is-primary">
+                            {{ begriff.content_data.kategorie if begriff.content_data.kategorie else 'Allgemein' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        {% if begriff.is_completed %}
+                            <span class="icon has-text-success">
+                                <i class="fas fa-check-circle"></i>
+                            </span>
+                        {% else %}
+                            <span class="icon has-text-grey-light">
+                                <i class="far fa-circle"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Begriff Title -->
+            <h3 class="title is-4 mb-3">{{ begriff.title }}</h3>
+            
+            <!-- Short Definition -->
+            <div class="content">
+                <p>{{ begriff.content_data.definition[:100] }}{{ '...' if begriff.content_data.definition|length > 100 else '' }}</p>
+            </div>
+            
+            <!-- Translation Preview -->
+            {% if session.translate_to and begriff.translations %}
+                <div class="translation-item">
+                    <strong>{{ session.translate_to|upper }}:</strong> 
+                    {{ begriff.translations[session.translate_to] if begriff.translations[session.translate_to] else 'Übersetzung wird geladen...' }}
+                </div>
+            {% endif %}
+            
+            <!-- Difficulty and Score -->
+            <div class="level is-mobile">
+                <div class="level-left">
+                    <div class="level-item">
+                        <span class="tag is-light">
+                            {% if begriff.content_data.schwierigkeit == 'leicht' %}
+                                🟢 Leicht
+                            {% elif begriff.content_data.schwierigkeit == 'mittel' %}
+                                🟡 Mittel
+                            {% else %}
+                                🔴 Schwer
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        {% if begriff.score %}
+                            <span class="tag is-success">{{ begriff.score }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Begriff Detail Modal -->
+<div class="modal" id="begriffModal">
+    <div class="modal-background" onclick="closeBegriffModal()"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title" id="modalTitle">Begriff Details</p>
+            <button class="delete" onclick="closeBegriffModal()"></button>
+        </header>
+        <section class="modal-card-body">
+            <!-- Begriff Content -->
+            <div class="content">
+                <div class="level is-mobile">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <span class="tag is-primary" id="modalCategory">Kategorie</span>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <div class="level-item">
+                            <span class="tag" id="modalDifficulty">Schwierigkeit</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 class="title is-3" id="modalBegriff">Begriff</h3>
+                <p class="subtitle is-5" id="modalDefinition">Definition</p>
+                
+                <!-- Example -->
+                <div class="box has-background-light" id="modalExampleBox">
+                    <h5 class="title is-6">💡 Beispiel:</h5>
+                    <p id="modalExample">Beispieltext</p>
+                </div>
+                
+                <!-- Translations -->
+                {% if session.translate_to %}
+                <div class="box has-background-info-light">
+                    <h5 class="title is-6">🌍 Übersetzungen:</h5>
+                    <div id="modalTranslations">
+                        <!-- Dynamic translations will be loaded here -->
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Notes -->
+                <div class="field">
+                    <label class="label">📝 Persönliche Notizen:</label>
+                    <div class="control">
+                        <textarea class="textarea" id="modalNotes" placeholder="Hier kannst du persönliche Notizen hinzufügen..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-success" id="toggleLearnedBtn" onclick="toggleLearned()">
+                <span class="icon"><i class="fas fa-check"></i></span>
+                <span>Als gelernt markieren</span>
+            </button>
+            <button class="button is-primary" onclick="saveNotes()">
+                <span class="icon"><i class="fas fa-save"></i></span>
+                <span>Notizen speichern</span>
+            </button>
+            <button class="button" onclick="closeBegriffModal()">Schließen</button>
+        </footer>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let currentBegriffId = null;
+let begriffeData = {{ content|tojson }};
+
+// Search functionality
+function searchBegriffe() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const cards = document.querySelectorAll('.begriff-item');
+    
+    cards.forEach(card => {
+        const title = card.querySelector('.title').textContent.toLowerCase();
+        const content = card.querySelector('.content p').textContent.toLowerCase();
+        
+        if (title.includes(searchTerm) || content.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Filter functionality
+function filterBegriffe() {
+    const category = document.getElementById('categoryFilter').value;
+    const statusFilter = document.querySelector('input[name="statusFilter"]:checked').value;
+    const cards = document.querySelectorAll('.begriff-item');
+    
+    cards.forEach(card => {
+        let showCard = true;
+        
+        // Category filter
+        if (category && card.dataset.category !== category) {
+            showCard = false;
+        }
+        
+        // Status filter
+        if (statusFilter === 'completed' && card.dataset.completed !== 'true') {
+            showCard = false;
+        } else if (statusFilter === 'todo' && card.dataset.completed === 'true') {
+            showCard = false;
+        }
+        
+        card.style.display = showCard ? 'block' : 'none';
+    });
+}
+
+// Modal functions
+function openBegriffModal(begriffId) {
+    currentBegriffId = begriffId;
+    const begriff = begriffeData.find(b => b.id === begriffId);
+    
+    if (!begriff) return;
+    
+    // Populate modal
+    document.getElementById('modalTitle').textContent = begriff.title;
+    document.getElementById('modalBegriff').textContent = begriff.title;
+    document.getElementById('modalDefinition').textContent = begriff.content_data.definition;
+    document.getElementById('modalCategory').textContent = begriff.content_data.kategorie || 'Allgemein';
+    document.getElementById('modalDifficulty').textContent = begriff.content_data.schwierigkeit || 'Mittel';
+    
+    // Example
+    if (begriff.content_data.beispiel) {
+        document.getElementById('modalExample').textContent = begriff.content_data.beispiel;
+        document.getElementById('modalExampleBox').style.display = 'block';
+    } else {
+        document.getElementById('modalExampleBox').style.display = 'none';
+    }
+    
+    // Load translations
+    loadTranslations(begriff);
+    
+    // Notes
+    document.getElementById('modalNotes').value = begriff.notes || '';
+    
+    // Toggle button
+    const toggleBtn = document.getElementById('toggleLearnedBtn');
+    if (begriff.is_completed) {
+        toggleBtn.innerHTML = '<span class="icon"><i class="fas fa-times"></i></span><span>Als ungelernt markieren</span>';
+        toggleBtn.className = 'button is-warning';
+    } else {
+        toggleBtn.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Als gelernt markieren</span>';
+        toggleBtn.className = 'button is-success';
+    }
+    
+    // Show modal
+    document.getElementById('begriffModal').classList.add('is-active');
+}
+
+function closeBegriffModal() {
+    document.getElementById('begriffModal').classList.remove('is-active');
+    currentBegriffId = null;
+}
+
+function loadTranslations(begriff) {
+    const translationsDiv = document.getElementById('modalTranslations');
+    if (!translationsDiv) return;
+    
+    translationsDiv.innerHTML = '';
+    
+    {% if session.translate_to %}
+    if (begriff.translations && begriff.translations['{{ session.translate_to }}']) {
+        translationsDiv.innerHTML = `
+            <div class="translation-item">
+                <strong>{{ session.translate_to|upper }}:</strong> ${begriff.translations['{{ session.translate_to }}']}
+            </div>
+        `;
+    } else {
+        translationsDiv.innerHTML = '<p class="has-text-grey">Übersetzung wird geladen...</p>';
+        // TODO: Call API to get translation
+    }
+    {% endif %}
+}
+
+async function toggleLearned() {
+    if (!currentBegriffId) return;
+    
+    const begriff = begriffeData.find(b => b.id === currentBegriffId);
+    const newStatus = !begriff.is_completed;
+    
+    try {
+        const response = await fetch(`/api/content/${currentBegriffId}/progress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completed: newStatus })
+        });
+        
+        if (response.ok) {
+            // Update local data
+            begriff.is_completed = newStatus;
+            
+            // Update UI
+            const card = document.querySelector(`[onclick="openBegriffModal(${currentBegriffId})"]`);
+            if (newStatus) {
+                card.classList.add('completed');
+                card.parentElement.dataset.completed = 'true';
+            } else {
+                card.classList.remove('completed');
+                card.parentElement.dataset.completed = 'false';
+            }
+            
+            // Show success toast
+            bulmaToast.toast({
+                message: newStatus ? 'Begriff als gelernt markiert! 🎉' : 'Begriff als ungelernt markiert',
+                type: newStatus ? 'is-success' : 'is-warning',
+                duration: 2000,
+                position: 'top-right'
+            });
+            
+            closeBegriffModal();
+            location.reload(); // Refresh to update progress bar
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        bulmaToast.toast({
+            message: 'Fehler beim Speichern',
+            type: 'is-danger',
+            duration: 3000
+        });
+    }
+}
+
+async function saveNotes() {
+    if (!currentBegriffId) return;
+    
+    const notes = document.getElementById('modalNotes').value;
+    
+    try {
+        const response = await fetch(`/api/content/${currentBegriffId}/progress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes: notes })
+        });
+        
+        if (response.ok) {
+            bulmaToast.toast({
+                message: 'Notizen gespeichert! 📝',
+                type: 'is-success',
+                duration: 2000
+            });
+        }
+    } catch (error) {
+        bulmaToast.toast({
+            message: 'Fehler beim Speichern',
+            type: 'is-danger',
+            duration: 3000
+        });
+    }
+}
+
+// Event listeners
+document.getElementById('searchInput').addEventListener('input', searchBegriffe);
+document.querySelectorAll('input[name="statusFilter"]').forEach(radio => {
+    radio.addEventListener('change', filterBegriffe);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeBegriffModal();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,412 @@
+{% extends "base.html" %}
+
+{% block title %}IHK Privatrecht - Lernsystem{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        color: white;
+        text-align: center;
+        padding: var(--spacing-16) var(--spacing-8);
+        border-radius: var(--radius-xl);
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .hero-title {
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: var(--spacing-4);
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .hero-subtitle {
+        font-size: 1.5rem;
+        opacity: 0.9;
+        margin-bottom: var(--spacing-8);
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    
+    .cta-button {
+        background: var(--secondary-color);
+        color: white;
+        padding: var(--spacing-5) var(--spacing-8);
+        font-size: var(--font-size-xl);
+        font-weight: 600;
+        border: none;
+        border-radius: var(--radius-lg);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-3);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .cta-button:hover {
+        background: var(--secondary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        gap: var(--spacing-8);
+        margin-bottom: var(--spacing-12);
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: var(--radius-xl);
+        padding: var(--spacing-8);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--gray-200);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-8px);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--primary-color);
+    }
+    
+    .feature-icon {
+        width: 4.5rem;
+        height: 4.5rem;
+        border-radius: var(--radius-xl);
+        background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .feature-title {
+        font-size: var(--font-size-2xl);
+        font-weight: 700;
+        margin-bottom: var(--spacing-4);
+        color: var(--gray-900);
+    }
+    
+    .feature-description {
+        color: var(--gray-600);
+        line-height: 1.7;
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .feature-benefits {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .feature-benefits li {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+        margin-bottom: var(--spacing-3);
+        color: var(--gray-700);
+        font-weight: 500;
+    }
+    
+    .feature-benefits i {
+        color: var(--success-color);
+        font-size: var(--font-size-lg);
+    }
+    
+    .progress-overview {
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        border-radius: var(--radius-xl);
+        padding: var(--spacing-8);
+        margin-bottom: var(--spacing-8);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .progress-title {
+        text-align: center;
+        font-size: var(--font-size-2xl);
+        font-weight: 700;
+        margin-bottom: var(--spacing-6);
+        color: var(--gray-900);
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-6);
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-6);
+        text-align: center;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .stat-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--primary-color);
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .stat-label {
+        color: var(--gray-600);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: var(--font-size-sm);
+    }
+    
+    .ihk-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        background: var(--warning-color);
+        color: white;
+        padding: var(--spacing-2) var(--spacing-4);
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .course-info {
+        background: white;
+        border-radius: var(--radius-xl);
+        padding: var(--spacing-8);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--gray-200);
+        margin-bottom: var(--spacing-8);
+    }
+    
+    @media (max-width: 768px) {
+        .hero-title {
+            font-size: 2.5rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+        }
+        
+        .features-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="ihk-badge">
+            <i class="fas fa-certificate"></i>
+            IHK-Zertifiziert
+        </div>
+        <h1 class="hero-title">
+            <i class="fas fa-scale-balanced"></i>
+            IHK Privatrecht
+        </h1>
+        <p class="hero-subtitle">
+            Interaktives Lernsystem für angehende Kaufleute im Einzelhandel und Verkäufer. 
+            Meistern Sie die Grundlagen des Privatrechts mit unserem modernen, praxisorientierten Ansatz.
+        </p>
+        <a href="{{ url_for('main.begriffswand') }}" class="cta-button">
+            <i class="fas fa-play-circle"></i>
+            Jetzt lernen starten
+        </a>
+    </section>
+
+    <!-- Progress Overview (nur für eingeloggte User) -->
+    {% if session.get('user_id') %}
+    <section class="progress-overview">
+        <h2 class="progress-title">
+            <i class="fas fa-chart-line"></i>
+            Ihr persönlicher Lernfortschritt
+        </h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="learnedTerms">0</div>
+                <div class="stat-label">Begriffe gelernt</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="quizzesTaken">0</div>
+                <div class="stat-label">Quiz absolviert</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="averageScore">0%</div>
+                <div class="stat-label">Durchschnitt Quiz</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="timeSpent">0h</div>
+                <div class="stat-label">Lernzeit gesamt</div>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Course Information -->
+    <section class="course-info">
+        <h2 style="margin-bottom: var(--spacing-6); color: var(--gray-900);">
+            <i class="fas fa-info-circle"></i>
+            Über diesen Kurs
+        </h2>
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: var(--spacing-8); align-items: start;">
+            <div>
+                <p style="font-size: var(--font-size-lg); line-height: 1.7; color: var(--gray-700); margin-bottom: var(--spacing-6);">
+                    Das Privatrecht bildet die Grundlage für alle kaufmännischen Tätigkeiten. In diesem Kurs lernen Sie 
+                    die wichtigsten Begriffe und Konzepte kennen, die Sie für Ihre IHK-Prüfung und den Berufsalltag benötigen.
+                </p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-4);">
+                    <div>
+                        <h4 style="color: var(--gray-900); margin-bottom: var(--spacing-3);">
+                            <i class="fas fa-target"></i> Lernziele
+                        </h4>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: var(--spacing-2);"><i class="fas fa-check" style="color: var(--success-color); margin-right: var(--spacing-2);"></i> Grundbegriffe des Privatrechts</li>
+                            <li style="margin-bottom: var(--spacing-2);"><i class="fas fa-check" style="color: var(--success-color); margin-right: var(--spacing-2);"></i> Vertragsarten und -inhalte</li>
+                            <li style="margin-bottom: var(--spacing-2);"><i class="fas fa-check" style="color: var(--success-color); margin-right: var(--spacing-2);"></i> Rechte und Pflichten</li>
+                            <li><i class="fas fa-check" style="color: var(--success-color); margin-right: var(--spacing-2);"></i> Praxisrelevante Anwendung</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color: var(--gray-900); margin-bottom: var(--spacing-3);">
+                            <i class="fas fa-clock"></i> Kursdauer
+                        </h4>
+                        <p style="color: var(--gray-600);">Selbststudium, ca. 8-12 Stunden</p>
+                        
+                        <h4 style="color: var(--gray-900); margin-bottom: var(--spacing-3); margin-top: var(--spacing-4);">
+                            <i class="fas fa-language"></i> Sprachen
+                        </h4>
+                        <p style="color: var(--gray-600);">Deutsch, English, العربية, Türkçe</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: var(--gray-50); padding: var(--spacing-6); border-radius: var(--radius-lg);">
+                <h4 style="margin-bottom: var(--spacing-4); color: var(--gray-900);">
+                    <i class="fas fa-chart-pie"></i> Themengebiete
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-3);">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Einkaufen</span>
+                        <strong>6 Begriffe</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Wohnen</span>
+                        <strong>5 Begriffe</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Arbeit</span>
+                        <strong>7 Begriffe</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Familie</span>
+                        <strong>4 Begriffe</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Verträge</span>
+                        <strong>8 Begriffe</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features-grid">
+        <a href="{{ url_for('main.begriffswand') }}" class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-th-large"></i>
+            </div>
+            <h3 class="feature-title">Interaktive Begriffswand</h3>
+            <p class="feature-description">
+                Entdecken Sie alle wichtigen Begriffe des Privatrechts in einer übersichtlichen, 
+                interaktiven Darstellung mit Suchfunktion und Kategoriefiltern.
+            </p>
+            <ul class="feature-benefits">
+                <li><i class="fas fa-check-circle"></i> 30 prüfungsrelevante Begriffe</li>
+                <li><i class="fas fa-check-circle"></i> Kategorisierte Übersicht</li>
+                <li><i class="fas fa-check-circle"></i> Mehrsprachige Übersetzungen</li>
+                <li><i class="fas fa-check-circle"></i> Fortschrittsverfolgung</li>
+            </ul>
+        </a>
+
+        <a href="{{ url_for('main.quiz') }}" class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h3 class="feature-title">Intelligente Quiz-Modi</h3>
+            <p class="feature-description">
+                Testen und festigen Sie Ihr Wissen mit vier verschiedenen Quiz-Modi. 
+                Adaptive Schwierigkeitsanpassung für optimalen Lernerfolg.
+            </p>
+            <ul class="feature-benefits">
+                <li><i class="fas fa-check-circle"></i> 4 verschiedene Quiz-Typen</li>
+                <li><i class="fas fa-check-circle"></i> Adaptive Schwierigkeit</li>
+                <li><i class="fas fa-check-circle"></i> Sofortiges Feedback</li>
+                <li><i class="fas fa-check-circle"></i> Detaillierte Statistiken</li>
+            </ul>
+        </a>
+
+        <a href="{{ url_for('main.lernkarten') }}" class="feature-card">
+            <div class="feature-icon">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <h3 class="feature-title">Digitale Lernkarten</h3>
+            <p class="feature-description">
+                Klassisches Karteikarten-System mit modernen Features. 
+                Spaced Repetition für nachhaltiges Lernen und langfristige Merkfähigkeit.
+            </p>
+            <ul class="feature-benefits">
+                <li><i class="fas fa-check-circle"></i> Spaced Repetition Algorithmus</li>
+                <li><i class="fas fa-check-circle"></i> Personalisierte Wiederholung</li>
+                <li><i class="fas fa-check-circle"></i> Schwierigkeitsmarkierung</li>
+                <li><i class="fas fa-check-circle"></i> Offline-Modus</li>
+            </ul>
+        </a>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Load user progress stats (if logged in)
+{% if session.get('user_id') %}
+document.addEventListener('DOMContentLoaded', function() {
+    loadUserStats();
+});
+
+async function loadUserStats() {
+    try {
+        const response = await fetch('/api/progress');
+        const data = await response.json();
+        
+        // Update stats (placeholder values for now)
+        document.getElementById('learnedTerms').textContent = data.learned_count || '0';
+        document.getElementById('quizzesTaken').textContent = data.quiz_count || '0';
+        document.getElementById('averageScore').textContent = (data.average_score || 0) + '%';
+        document.getElementById('timeSpent').textContent = Math.round((data.time_spent || 0) / 60) + 'h';
+    } catch (error) {
+        console.log('Could not load user stats:', error);
+    }
+}
+{% endif %}
+</script>
+{% endblock %}

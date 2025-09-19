@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benutzerverwaltung - IHK Privatrecht</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .users-table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .users-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .users-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-active { background-color: #27ae60; color: white; }
+        .status-inactive { background-color: #e74c3c; color: white; }
+        .status-pending { background-color: #f39c12; color: white; }
+        .status-admin { background-color: #8e44ad; color: white; }
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .btn-small {
+            padding: 4px 8px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .btn-approve { background-color: #27ae60; color: white; }
+        .btn-reject { background-color: #e74c3c; color: white; }
+        .btn-toggle { background-color: #3498db; color: white; }
+        .btn-admin { background-color: #8e44ad; color: white; }
+        .btn-small:hover { opacity: 0.8; }
+        .make-dozent-form {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .make-dozent-form h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .form-inline {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .form-inline input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            flex: 1;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>Benutzerverwaltung</h1>
+            <div>
+                <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Zurück zur Startseite</a>
+                {% if session.get('user_id') %}
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-secondary">Abmelden</a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="make-dozent-form">
+            <h3>Dozent hinzufügen</h3>
+            <form action="{{ url_for('admin.make_dozent', username='') }}" method="POST" class="form-inline" 
+                  onsubmit="this.action = '{{ url_for('admin.make_dozent', username='') }}' + document.getElementById('dozent-username').value;">
+                <input type="text" id="dozent-username" placeholder="Benutzername eingeben" required>
+                <button type="submit" class="btn btn-admin">Als Dozent einrichten</button>
+            </form>
+        </div>
+
+        <table class="users-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Benutzername</th>
+                    <th>Email</th>
+                    <th>Telefon</th>
+                    <th>Status</th>
+                    <th>Erstellt</th>
+                    <th>Letzter Login</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user[0] }}</td>
+                    <td>
+                        {{ user[1] }}
+                        {% if user[8] %}<span class="status-badge status-admin">Admin</span>{% endif %}
+                    </td>
+                    <td>{{ user[2] or '-' }}</td>
+                    <td>{{ user[3] or '-' }}</td>
+                    <td>
+                        {% if user[7] %}
+                            <span class="status-badge status-active">Aktiv</span>
+                        {% else %}
+                            <span class="status-badge status-inactive">Inaktiv</span>
+                        {% endif %}
+                        
+                        {% if user[5] %}
+                            <span class="status-badge status-active">Verifiziert</span>
+                        {% else %}
+                            <span class="status-badge status-pending">Unverifiziert</span>
+                        {% endif %}
+                        
+                        {% if user[6] %}
+                            <span class="status-badge status-active">Freigegeben</span>
+                        {% else %}
+                            <span class="status-badge status-pending">Nicht freigegeben</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user[9] or '-' }}</td>
+                    <td>{{ user[10] or '-' }}</td>
+                    <td>
+                        <div class="action-buttons">
+                            {% if not user[6] %}
+                                <form action="{{ url_for('admin.approve_user', user_id=user[0]) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn-small btn-approve">Freigeben</button>
+                                </form>
+                            {% else %}
+                                <form action="{{ url_for('admin.reject_user', user_id=user[0]) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn-small btn-reject">Freigabe entziehen</button>
+                                </form>
+                            {% endif %}
+                            
+                            <form action="{{ url_for('admin.toggle_active', user_id=user[0]) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn-small btn-toggle">
+                                    {% if user[7] %}Deaktivieren{% else %}Aktivieren{% endif %}
+                                </button>
+                            </form>
+                            
+                            <form action="{{ url_for('admin.toggle_admin', user_id=user[0]) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn-small btn-admin">
+                                    {% if user[8] %}Admin entziehen{% else %}Admin machen{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

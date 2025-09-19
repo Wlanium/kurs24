@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Dozenten-Dashboard - IHK Privatrecht{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: var(--spacing-6);
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .dashboard-card {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-6);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--gray-200);
+    }
+    
+    .stat-header {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+        margin-bottom: var(--spacing-4);
+    }
+    
+    .stat-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-xl);
+        color: white;
+    }
+    
+    .stat-icon.primary { background-color: var(--primary-color); }
+    .stat-icon.secondary { background-color: var(--secondary-color); }
+    .stat-icon.warning { background-color: var(--warning-color); }
+    
+    .stat-content h3 {
+        font-size: var(--font-size-lg);
+        font-weight: 600;
+        color: var(--gray-900);
+        margin: 0;
+    }
+    
+    .stat-content p {
+        color: var(--gray-600);
+        font-size: var(--font-size-sm);
+        margin: 0;
+    }
+    
+    .stat-value {
+        font-size: var(--font-size-3xl);
+        font-weight: 700;
+        color: var(--gray-900);
+        margin-bottom: var(--spacing-2);
+    }
+    
+    .controls-section {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-6);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--gray-200);
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .controls-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .controls-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: var(--spacing-4);
+    }
+    
+    .control-button {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-3);
+        padding: var(--spacing-6);
+        border: 2px solid var(--gray-200);
+        border-radius: var(--radius-lg);
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: var(--gray-700);
+    }
+    
+    .control-button:hover {
+        border-color: var(--primary-color);
+        background-color: color-mix(in srgb, var(--primary-color) 5%, white);
+        color: var(--primary-color);
+    }
+    
+    .control-button.primary {
+        border-color: var(--primary-color);
+        color: var(--primary-color);
+        background-color: color-mix(in srgb, var(--primary-color) 5%, white);
+    }
+    
+    .control-icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-xl);
+        background-color: var(--gray-100);
+        transition: all 0.2s ease;
+    }
+    
+    .control-button:hover .control-icon {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .control-button.primary .control-icon {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .control-text {
+        font-weight: 500;
+        text-align: center;
+    }
+    
+    .section-title {
+        font-size: var(--font-size-2xl);
+        font-weight: 600;
+        color: var(--gray-900);
+        margin-bottom: var(--spacing-6);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-3);
+    }
+    
+    .quick-actions {
+        display: flex;
+        gap: var(--spacing-3);
+        flex-wrap: wrap;
+    }
+    
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .controls-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .quick-actions {
+            justify-content: center;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="section-title">
+        <i class="fas fa-chalkboard-teacher"></i>
+        Dozenten-Dashboard
+    </h1>
+    
+    <!-- Statistics Overview -->
+    <div class="dashboard-grid">
+        <div class="dashboard-card">
+            <div class="stat-header">
+                <div class="stat-icon primary">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Aktive Teilnehmer</h3>
+                    <p>Aktuell online</p>
+                </div>
+            </div>
+            <div class="stat-value" id="activeUsers">0</div>
+        </div>
+        
+        <div class="dashboard-card">
+            <div class="stat-header">
+                <div class="stat-icon secondary">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Gesamtfortschritt</h3>
+                    <p>Durchschnitt aller Teilnehmer</p>
+                </div>
+            </div>
+            <div class="stat-value" id="totalProgress">0%</div>
+        </div>
+        
+        <div class="dashboard-card">
+            <div class="stat-header">
+                <div class="stat-icon warning">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stat-content">
+                    <h3>Kursdauer</h3>
+                    <p>Verbleibende Zeit</p>
+                </div>
+            </div>
+            <div class="stat-value">2,5 Tage</div>
+        </div>
+    </div>
+    
+    <!-- Course Controls -->
+    <div class="controls-section">
+        <div class="controls-header">
+            <h2 class="section-title" style="margin: 0;">
+                <i class="fas fa-cogs"></i>
+                Kurssteuerung
+            </h2>
+            <div class="quick-actions">
+                <a href="{{ url_for('admin.users') }}" class="btn btn-primary">
+                    <i class="fas fa-user-shield"></i>
+                    Benutzerverwaltung
+                </a>
+            </div>
+        </div>
+        
+        <div class="controls-grid">
+            <button class="control-button primary" id="presentationMode">
+                <div class="control-icon">
+                    <i class="fas fa-desktop"></i>
+                </div>
+                <div class="control-text">Präsentationsmodus</div>
+            </button>
+            
+            <button class="control-button" id="quizMode">
+                <div class="control-icon">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="control-text">Quiz starten</div>
+            </button>
+            
+            <button class="control-button" id="resetProgress">
+                <div class="control-icon">
+                    <i class="fas fa-refresh"></i>
+                </div>
+                <div class="control-text">Fortschritt zurücksetzen</div>
+            </button>
+            
+            <a href="{{ url_for('main.teilnehmer') }}" class="control-button">
+                <div class="control-icon">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <div class="control-text">Teilnehmer-Ansicht</div>
+            </a>
+            
+            <button class="control-button" id="exportData">
+                <div class="control-icon">
+                    <i class="fas fa-download"></i>
+                </div>
+                <div class="control-text">Daten exportieren</div>
+            </button>
+            
+            <button class="control-button" id="courseSettings">
+                <div class="control-icon">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <div class="control-text">Kurs-Einstellungen</div>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Session Management -->
+    <div class="controls-section">
+        <h2 class="section-title">
+            <i class="fas fa-calendar-alt"></i>
+            Session-Verwaltung
+        </h2>
+        
+        <div class="controls-grid">
+            <button class="control-button" id="pauseSession">
+                <div class="control-icon">
+                    <i class="fas fa-pause"></i>
+                </div>
+                <div class="control-text">Session pausieren</div>
+            </button>
+            
+            <button class="control-button" id="endSession">
+                <div class="control-icon">
+                    <i class="fas fa-stop"></i>
+                </div>
+                <div class="control-text">Session beenden</div>
+            </button>
+            
+            <button class="control-button" id="sessionNotes">
+                <div class="control-icon">
+                    <i class="fas fa-sticky-note"></i>
+                </div>
+                <div class="control-text">Session-Notizen</div>
+            </button>
+            
+            <button class="control-button" id="attendanceList">
+                <div class="control-icon">
+                    <i class="fas fa-list-check"></i>
+                </div>
+                <div class="control-text">Anwesenheitsliste</div>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Placeholder for dozent dashboard functionality
+    document.getElementById('presentationMode').addEventListener('click', function() {
+        alert('Präsentationsmodus wird gestartet...');
+    });
+    
+    document.getElementById('quizMode').addEventListener('click', function() {
+        alert('Quiz-Modus wird gestartet...');
+    });
+    
+    document.getElementById('resetProgress').addEventListener('click', function() {
+        if (confirm('Möchten Sie wirklich den Fortschritt aller Teilnehmer zurücksetzen?')) {
+            alert('Fortschritt wurde zurückgesetzt.');
+        }
+    });
+    
+    // Update statistics (placeholder)
+    function updateStats() {
+        // In real implementation, this would fetch from API
+        document.getElementById('activeUsers').textContent = Math.floor(Math.random() * 25) + 5;
+        document.getElementById('totalProgress').textContent = Math.floor(Math.random() * 40) + 60 + '%';
+    }
+    
+    // Update stats every 30 seconds
+    updateStats();
+    setInterval(updateStats, 30000);
+</script>
+{% endblock %}

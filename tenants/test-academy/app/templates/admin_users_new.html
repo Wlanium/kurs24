@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Benutzerverwaltung - IHK Privatrecht{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-8);
+    }
+    
+    .make-dozent-form {
+        background: white;
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-6);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--gray-200);
+        margin-bottom: var(--spacing-6);
+    }
+    
+    .form-inline {
+        display: flex;
+        gap: var(--spacing-4);
+        align-items: end;
+    }
+    
+    .form-inline .form-group {
+        flex: 1;
+        margin-bottom: 0;
+    }
+    
+    .status-badges {
+        display: flex;
+        gap: var(--spacing-2);
+        flex-wrap: wrap;
+    }
+    
+    .status-badge {
+        padding: var(--spacing-1) var(--spacing-2);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .status-active { 
+        background-color: color-mix(in srgb, var(--success-color) 20%, white);
+        color: var(--success-color);
+    }
+    
+    .status-inactive { 
+        background-color: color-mix(in srgb, var(--error-color) 20%, white);
+        color: var(--error-color);
+    }
+    
+    .status-pending { 
+        background-color: color-mix(in srgb, var(--warning-color) 20%, white);
+        color: var(--warning-color);
+    }
+    
+    .status-admin { 
+        background-color: color-mix(in srgb, var(--primary-color) 20%, white);
+        color: var(--primary-color);
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: var(--spacing-2);
+        flex-wrap: wrap;
+    }
+    
+    .table-container {
+        background: white;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow);
+        border: 1px solid var(--gray-200);
+        overflow: hidden;
+    }
+    
+    .user-name {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-2);
+        font-weight: 500;
+    }
+    
+    .user-avatar {
+        width: 2rem;
+        height: 2rem;
+        border-radius: 50%;
+        background-color: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+    }
+    
+    @media (max-width: 768px) {
+        .admin-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: var(--spacing-4);
+        }
+        
+        .form-inline {
+            flex-direction: column;
+        }
+        
+        .action-buttons {
+            justify-content: center;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="admin-header">
+        <h1 class="section-title" style="margin: 0;">
+            <i class="fas fa-user-shield"></i>
+            Benutzerverwaltung
+        </h1>
+    </div>
+
+    <!-- Dozent hinzufügen Form -->
+    <div class="make-dozent-form">
+        <h3 style="margin-bottom: var(--spacing-4); color: var(--gray-900);">
+            <i class="fas fa-user-plus"></i>
+            Dozent hinzufügen
+        </h3>
+        <form action="{{ url_for('admin.make_dozent', username='') }}" method="POST" class="form-inline" 
+              onsubmit="this.action = '{{ url_for('admin.make_dozent', username='') }}' + document.getElementById('dozent-username').value;">
+            <div class="form-group">
+                <label class="form-label" for="dozent-username">Benutzername</label>
+                <input type="text" id="dozent-username" class="form-input" placeholder="Benutzername eingeben" required>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-chalkboard-teacher"></i>
+                Als Dozent einrichten
+            </button>
+        </form>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Benutzer</th>
+                    <th>Kontakt</th>
+                    <th>Status</th>
+                    <th>Erstellt</th>
+                    <th>Letzter Login</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>
+                        <div class="user-name">
+                            <div class="user-avatar">
+                                {{ user[1][0].upper() }}
+                            </div>
+                            <div>
+                                <div>{{ user[1] }}</div>
+                                {% if user[8] %}
+                                    <span class="status-badge status-admin">Dozent</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            {% if user[2] %}
+                                <div><i class="fas fa-envelope"></i> {{ user[2] }}</div>
+                            {% endif %}
+                            {% if user[3] %}
+                                <div><i class="fas fa-phone"></i> {{ user[3] }}</div>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="status-badges">
+                            {% if user[7] %}
+                                <span class="status-badge status-active">Aktiv</span>
+                            {% else %}
+                                <span class="status-badge status-inactive">Inaktiv</span>
+                            {% endif %}
+                            
+                            {% if user[5] %}
+                                <span class="status-badge status-active">Verifiziert</span>
+                            {% else %}
+                                <span class="status-badge status-pending">Unverifiziert</span>
+                            {% endif %}
+                            
+                            {% if user[6] %}
+                                <span class="status-badge status-active">Freigegeben</span>
+                            {% else %}
+                                <span class="status-badge status-pending">Wartend</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if user[9] %}
+                            {{ user[9][:10] }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user[10] %}
+                            {{ user[10][:10] }}
+                        {% else %}
+                            <span class="status-badge status-pending">Nie</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            {% if not user[6] %}
+                                <form action="{{ url_for('admin.approve_user', user_id=user[0]) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-success btn-sm">
+                                        <i class="fas fa-check"></i>
+                                        Freigeben
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form action="{{ url_for('admin.reject_user', user_id=user[0]) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-times"></i>
+                                        Entziehen
+                                    </button>
+                                </form>
+                            {% endif %}
+                            
+                            <form action="{{ url_for('admin.toggle_active', user_id=user[0]) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn btn-outline btn-sm">
+                                    {% if user[7] %}
+                                        <i class="fas fa-user-slash"></i>
+                                        Deaktivieren
+                                    {% else %}
+                                        <i class="fas fa-user-check"></i>
+                                        Aktivieren
+                                    {% endif %}
+                                </button>
+                            </form>
+                            
+                            <form action="{{ url_for('admin.toggle_admin', user_id=user[0]) }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    {% if user[8] %}
+                                        <i class="fas fa-user-minus"></i>
+                                        Dozent entziehen
+                                    {% else %}
+                                        <i class="fas fa-user-plus"></i>
+                                        Dozent machen
+                                    {% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

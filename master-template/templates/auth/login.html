@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if course %}{{ course.title }} - Anmeldung{% else %}Kurs Academy - Anmeldung{% endif %}</title>
+    
+    <!-- Bulma CSS 1.0 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@1.0.0/css/bulma.min.css">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Bulma Toast -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma-toast@2.4.4/dist/bulma-toast.min.css">
+    
+    <!-- Custom Auth Styles -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            min-height: 100vh;
+        }
+        
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .auth-card {
+            max-width: 900px;
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .auth-hero {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .auth-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.1"><circle cx="30" cy="30" r="4"/></g></svg>') repeat;
+            animation: float 20s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .auth-hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .course-icon {
+            width: 4rem;
+            height: 4rem;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-list {
+            list-style: none;
+            margin-top: 2rem;
+        }
+        
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        
+        .feature-list .icon {
+            background: rgba(255, 255, 255, 0.2);
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+        
+        .auth-tabs {
+            background: hsl(0, 0%, 96%);
+            border-radius: 8px;
+            padding: 0.25rem;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: hsl(0, 0%, 48%);
+        }
+        
+        .auth-tab.is-active {
+            background: white;
+            color: #2563eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .auth-form {
+            display: none;
+        }
+        
+        .auth-form.is-active {
+            display: block;
+        }
+        
+        .password-field {
+            position: relative;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: hsl(0, 0%, 48%);
+            cursor: pointer;
+        }
+        
+        .error-notification {
+            display: none;
+        }
+        
+        .error-notification.is-active {
+            display: block;
+        }
+        
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+        }
+        
+        .loading-overlay.is-active {
+            display: flex;
+        }
+        
+        .stats-counter {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .stats-number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        
+        .stats-label {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            margin-top: 0.25rem;
+        }
+        
+        @media screen and (max-width: 768px) {
+            .auth-card .columns {
+                margin: 0;
+            }
+            
+            .auth-hero {
+                text-align: center;
+            }
+            
+            .feature-list {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="columns is-gapless">
+                <!-- Hero Section -->
+                <div class="column is-5">
+                    <div class="auth-hero p-6">
+                        <div class="auth-hero-content">
+                            <div class="course-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            
+                            <h1 class="title is-2 has-text-white mb-3">
+                                {% if course %}{{ course.title }}{% else %}Kurs Academy{% endif %}
+                            </h1>
+                            
+                            <p class="subtitle is-5 has-text-white mb-5" style="opacity: 0.9;">
+                                {% if course %}
+                                    {{ course.description or 'Interaktive Lernplattform für deinen Erfolg' }}
+                                {% else %}
+                                    Interaktive Lernplattform für deinen Erfolg
+                                {% endif %}
+                            </p>
+                            
+                            <!-- Course Stats -->
+                            <div class="columns is-multiline">
+                                <div class="column is-6">
+                                    <div class="stats-counter">
+                                        <div class="stats-number" id="contentCount">...</div>
+                                        <div class="stats-label">Lerninhalte</div>
+                                    </div>
+                                </div>
+                                <div class="column is-6">
+                                    <div class="stats-counter">
+                                        <div class="stats-number" id="userCount">...</div>
+                                        <div class="stats-label">Lernende</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Features -->
+                            <ul class="feature-list">
+                                <li>
+                                    <div class="icon">
+                                        <i class="fas fa-brain"></i>
+                                    </div>
+                                    <span>Adaptive Lernalgorithmen</span>
+                                </li>
+                                <li>
+                                    <div class="icon">
+                                        <i class="fas fa-globe"></i>
+                                    </div>
+                                    <span>Mehrsprachige Übersetzungen</span>
+                                </li>
+                                <li>
+                                    <div class="icon">
+                                        <i class="fas fa-gamepad"></i>
+                                    </div>
+                                    <span>Gamification & Quiz-Modi</span>
+                                </li>
+                                <li>
+                                    <div class="icon">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <span>Detaillierter Fortschritt</span>
+                                </li>
+                                <li>
+                                    <div class="icon">
+                                        <i class="fas fa-mobile-alt"></i>
+                                    </div>
+                                    <span>Optimiert für alle Geräte</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Auth Section -->
+                <div class="column is-7">
+                    <div class="p-6">
+                        <!-- Tab Navigation -->
+                        <div class="field is-grouped auth-tabs mb-5">
+                            <button class="auth-tab is-active" data-tab="login">
+                                <span class="icon-text">
+                                    <span class="icon"><i class="fas fa-sign-in-alt"></i></span>
+                                    <span>Anmelden</span>
+                                </span>
+                            </button>
+                            <button class="auth-tab" data-tab="register">
+                                <span class="icon-text">
+                                    <span class="icon"><i class="fas fa-user-plus"></i></span>
+                                    <span>Registrieren</span>
+                                </span>
+                            </button>
+                        </div>
+                        
+                        <!-- Error/Success Notification -->
+                        <div class="notification is-danger error-notification" id="errorNotification">
+                            <button class="delete" onclick="hideError()"></button>
+                            <span id="errorText"></span>
+                        </div>
+                        
+                        {% if error %}
+                        <div class="notification is-danger">
+                            {{ error }}
+                        </div>
+                        {% endif %}
+                        
+                        <!-- Login Form -->
+                        <form class="auth-form is-active" id="loginForm" method="POST" action="{{ url_for('auth.login') }}">
+                            <div class="field">
+                                <label class="label">Benutzername</label>
+                                <div class="control has-icons-left">
+                                    <input class="input is-large" type="text" name="username" required 
+                                           placeholder="Dein Benutzername" autocomplete="username">
+                                    <span class="icon is-left">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="field">
+                                <label class="label">Passwort</label>
+                                <div class="control has-icons-left password-field">
+                                    <input class="input is-large" type="password" name="password" required 
+                                           placeholder="Dein Passwort" autocomplete="current-password" id="loginPassword">
+                                    <span class="icon is-left">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <button type="button" class="password-toggle" data-target="loginPassword">
+                                        <span class="icon">
+                                            <i class="fas fa-eye"></i>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="field">
+                                <div class="control" style="position: relative;">
+                                    <button type="submit" class="button is-primary is-large is-fullwidth" id="loginSubmit">
+                                        <span class="icon">
+                                            <i class="fas fa-sign-in-alt"></i>
+                                        </span>
+                                        <span>Anmelden</span>
+                                    </button>
+                                    <div class="loading-overlay" id="loginLoading">
+                                        <div class="button is-primary is-loading is-large"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- Register Form -->
+                        <form class="auth-form" id="registerForm" method="POST" action="{{ url_for('auth.register') }}">
+                            <div class="field">
+                                <label class="label">Benutzername</label>
+                                <div class="control has-icons-left">
+                                    <input class="input is-large" type="text" name="username" required 
+                                           placeholder="Wähle einen Benutzernamen" autocomplete="username">
+                                    <span class="icon is-left">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="field">
+                                <label class="label">E-Mail</label>
+                                <div class="control has-icons-left">
+                                    <input class="input is-large" type="email" name="email" required 
+                                           placeholder="deine@email.de" autocomplete="email">
+                                    <span class="icon is-left">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="field">
+                                <label class="label">Passwort</label>
+                                <div class="control has-icons-left password-field">
+                                    <input class="input is-large" type="password" name="password" required 
+                                           placeholder="Mindestens 6 Zeichen" autocomplete="new-password" 
+                                           minlength="6" id="registerPassword">
+                                    <span class="icon is-left">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <button type="button" class="password-toggle" data-target="registerPassword">
+                                        <span class="icon">
+                                            <i class="fas fa-eye"></i>
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="field">
+                                <label class="label">Bevorzugte Lernsprache</label>
+                                <div class="control has-icons-left">
+                                    <div class="select is-large is-fullwidth">
+                                        <select name="preferred_language">
+                                            <option value="de">🇩🇪 Deutsch (Standard)</option>
+                                            <option value="en">🇬🇧 English</option>
+                                            <option value="ar">🇸🇦 العربية</option>
+                                            <option value="tr">🇹🇷 Türkçe</option>
+                                            <option value="ru">🇷🇺 Русский</option>
+                                            <option value="pl">🇵🇱 Polski</option>
+                                            <option value="it">🇮🇹 Italiano</option>
+                                            <option value="fr">🇫🇷 Français</option>
+                                            <option value="es">🇪🇸 Español</option>
+                                        </select>
+                                    </div>
+                                    <span class="icon is-left">
+                                        <i class="fas fa-globe"></i>
+                                    </span>
+                                </div>
+                                <p class="help">Diese Sprache wird für Übersetzungen als Basis verwendet</p>
+                            </div>
+                            
+                            <div class="field">
+                                <label class="label">Übersetzungssprache (optional)</label>
+                                <div class="control has-icons-left">
+                                    <div class="select is-large is-fullwidth">
+                                        <select name="translate_to">
+                                            <option value="">Keine zusätzlichen Übersetzungen</option>
+                                            <option value="en">🇬🇧 English</option>
+                                            <option value="ar">🇸🇦 العربية</option>
+                                            <option value="tr">🇹🇷 Türkçe</option>
+                                            <option value="ru">🇷🇺 Русский</option>
+                                            <option value="pl">🇵🇱 Polski</option>
+                                            <option value="it">🇮🇹 Italiano</option>
+                                            <option value="fr">🇫🇷 Français</option>
+                                            <option value="es">🇪🇸 Español</option>
+                                        </select>
+                                    </div>
+                                    <span class="icon is-left">
+                                        <i class="fas fa-language"></i>
+                                    </span>
+                                </div>
+                                <p class="help">Wähle eine Sprache für automatische Übersetzungen der Lerninhalte</p>
+                            </div>
+                            
+                            <div class="field">
+                                <div class="control" style="position: relative;">
+                                    <button type="submit" class="button is-success is-large is-fullwidth" id="registerSubmit">
+                                        <span class="icon">
+                                            <i class="fas fa-user-plus"></i>
+                                        </span>
+                                        <span>Registrieren</span>
+                                    </button>
+                                    <div class="loading-overlay" id="registerLoading">
+                                        <div class="button is-success is-loading is-large"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- Dozent Link -->
+                        <div class="has-text-centered mt-6 pt-5" style="border-top: 1px solid hsl(0, 0%, 86%);">
+                            <p class="has-text-grey">
+                                <strong>Dozent oder Admin?</strong>
+                            </p>
+                            <a href="{{ url_for('auth.login') }}?role=dozent" class="button is-light is-small mt-2">
+                                <span class="icon">
+                                    <i class="fas fa-chalkboard-teacher"></i>
+                                </span>
+                                <span>Dozenten-Login</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bulma-toast@2.4.4/dist/bulma-toast.min.js"></script>
+    
+    <script>
+        // Tab Switching
+        document.querySelectorAll('.auth-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                
+                // Update tabs
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('is-active'));
+                tab.classList.add('is-active');
+                
+                // Update forms
+                document.querySelectorAll('.auth-form').forEach(form => form.classList.remove('is-active'));
+                document.getElementById(targetTab + 'Form').classList.add('is-active');
+                
+                hideError();
+            });
+        });
+        
+        // Password Toggle
+        document.querySelectorAll('.password-toggle').forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const targetId = toggle.dataset.target;
+                const input = document.getElementById(targetId);
+                const icon = toggle.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'fas fa-eye-slash';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'fas fa-eye';
+                }
+            });
+        });
+        
+        // Form Submissions with Loading States
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            const submitBtn = document.getElementById('loginSubmit');
+            const loading = document.getElementById('loginLoading');
+            
+            loading.classList.add('is-active');
+            submitBtn.disabled = true;
+        });
+        
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            const submitBtn = document.getElementById('registerSubmit');
+            const loading = document.getElementById('registerLoading');
+            
+            loading.classList.add('is-active');
+            submitBtn.disabled = true;
+        });
+        
+        // Error Handling
+        function showError(message) {
+            const notification = document.getElementById('errorNotification');
+            const text = document.getElementById('errorText');
+            
+            text.textContent = message;
+            notification.classList.add('is-active');
+        }
+        
+        function hideError() {
+            const notification = document.getElementById('errorNotification');
+            notification.classList.remove('is-active');
+        }
+        
+        // Clear errors on input
+        document.querySelectorAll('.input').forEach(input => {
+            input.addEventListener('input', hideError);
+        });
+        
+        // Load Course Stats
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Load content count
+                const contentResponse = await fetch('/api/content/stats');
+                if (contentResponse.ok) {
+                    const stats = await contentResponse.json();
+                    document.getElementById('contentCount').textContent = stats.total_content || '200+';
+                    document.getElementById('userCount').textContent = stats.active_users || '50+';
+                } else {
+                    document.getElementById('contentCount').textContent = '200+';
+                    document.getElementById('userCount').textContent = '50+';
+                }
+            } catch (error) {
+                document.getElementById('contentCount').textContent = '200+';
+                document.getElementById('userCount').textContent = '50+';
+            }
+        });
+    </script>
+</body>
+</html>

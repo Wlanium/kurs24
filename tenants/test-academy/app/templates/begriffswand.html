@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Begriffswand - IHK Privatrecht{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Begriffswand specific styles */
+    .begriffswand-content {
+        padding: 1.5rem 0;
+    }
+    
+    /* Full width layout for begriffswand */
+    .section {
+        padding: 1rem 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="begriffswand-content">
+    <!-- Progress Section -->
+        <div class="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-text" id="progressText">0 von 30 Begriffen gelernt</span>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Begriff suchen...">
+            </div>
+            
+            <div class="filter-container">
+                <select id="categoryFilter">
+                    <option value="">Alle Kategorien</option>
+                </select>
+            </div>
+            
+            <div class="mode-toggle">
+                <button id="studyMode" class="mode-btn active">
+                    <i class="fas fa-book"></i> Lernen
+                </button>
+                <button id="quizMode" class="mode-btn">
+                    <i class="fas fa-question-circle"></i> Quiz
+                </button>
+            </div>
+        </div>
+
+        <!-- Quiz Container -->
+        <div id="quizContainer" class="quiz-container hidden">
+            <div class="quiz-header">
+                <h2 id="quizTitle">Quiz Modus</h2>
+                <div class="quiz-stats">
+                    <span id="quizScore">Punkte: 0</span>
+                    <span id="quizProgress">Frage 1 von 10</span>
+                </div>
+            </div>
+            
+            <div class="quiz-modes">
+                <button class="quiz-mode-btn" data-mode="definition">Definition finden</button>
+                <button class="quiz-mode-btn" data-mode="reverse">Begriff finden</button>
+                <button class="quiz-mode-btn" data-mode="category">Kategorie zuordnen</button>
+                <button class="quiz-mode-btn" data-mode="difficulty">Schwierigkeit</button>
+            </div>
+            
+            <div id="quizCard" class="quiz-card">
+                <div class="quiz-question" id="quizQuestion"></div>
+                <div class="quiz-options" id="quizOptions"></div>
+                <div class="quiz-result" id="quizResult"></div>
+                <button id="nextQuizBtn" class="btn btn-primary hidden">Nächste Frage</button>
+            </div>
+        </div>
+
+        <!-- Begriffe Grid -->
+        <div id="begriffeGrid" class="begriffe-grid">
+            <!-- Begriffe werden hier dynamisch geladen -->
+        </div>
+
+        <!-- Begriff Detail Modal -->
+        <div id="begriffModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modalTitle"></h2>
+                    <button class="modal-close" id="closeModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="begriff-detail">
+                        <div class="begriff-info">
+                            <div class="category-badge" id="modalCategory"></div>
+                            <div class="difficulty-badge" id="modalDifficulty"></div>
+                        </div>
+                        <div class="definition" id="modalDefinition"></div>
+                        <div class="example" id="modalExample"></div>
+                        <div class="tip" id="modalTip"></div>
+                        
+                        <div class="translations">
+                            <h4>Übersetzungen</h4>
+                            <div class="translation-grid">
+                                <div class="translation-item">
+                                    <strong>English:</strong> <span id="modalEnglish"></span>
+                                </div>
+                                <div class="translation-item">
+                                    <strong>العربية:</strong> <span id="modalArabic"></span>
+                                </div>
+                                <div class="translation-item">
+                                    <strong>Türkçe:</strong> <span id="modalTurkish"></span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="progress-actions">
+                            <button id="markLearned" class="btn btn-success">
+                                <i class="fas fa-check"></i> Als gelernt markieren
+                            </button>
+                            <button id="markUnlearned" class="btn btn-secondary hidden">
+                                <i class="fas fa-undo"></i> Als nicht gelernt markieren
+                            </button>
+                        </div>
+                        
+                        <div class="notes-section">
+                            <label for="begriffNotes">Persönliche Notizen:</label>
+                            <textarea id="begriffNotes" placeholder="Hier können Sie persönliche Notizen hinzufügen..."></textarea>
+                            <button id="saveNotes" class="btn btn-primary">Notizen speichern</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Einstellungen</h2>
+                    <button class="modal-close" id="closeSettings">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="settings-section">
+                        <h3>Sprache für Übersetzungen</h3>
+                        <select id="languageSelect">
+                            <option value="de">Deutsch</option>
+                            <option value="en">English</option>
+                            <option value="ar">العربية</option>
+                            <option value="tr">Türkçe</option>
+                        </select>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Quiz-Einstellungen</h3>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="autoAdvance"> 
+                                Automatisch zur nächsten Frage
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="showHints"> 
+                                Hilfen anzeigen
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3>Fortschritt</h3>
+                        <button id="resetProgress" class="btn btn-warning">
+                            <i class="fas fa-refresh"></i> Fortschritt zurücksetzen
+                        </button>
+                        <button id="exportProgress" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Fortschritt exportieren
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% endblock %}

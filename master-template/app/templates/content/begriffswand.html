@@ -1,0 +1,625 @@
+{% extends "base.html" %}
+
+{% block title %}Begriffe lernen - {{ course.title if course else 'Mein Kurs' }}{% endblock %}
+
+{% block content %}
+<!-- Header with Search and Filters -->
+<div class="box">
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <h1 class="title is-3">
+                    <span class="icon-text">
+                        <span class="icon has-text-primary">
+                            <i class="fas fa-book-open"></i>
+                        </span>
+                        <span>Begriffe lernen</span>
+                    </span>
+                </h1>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <div class="tags has-addons">
+                    <span class="tag is-dark">Fortschritt</span>
+                    <span class="tag is-primary">{{ content|selectattr("is_completed")|list|length }}/{{ content|length }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <progress class="progress is-course" value="{{ ((content|selectattr('is_completed')|list|length) / content|length * 100) if content else 0 }}" max="100">
+        {{ ((content|selectattr('is_completed')|list|length) / content|length * 100)|round(1) if content else 0 }}%
+    </progress>
+</div>
+
+<!-- Search and Filter Controls -->
+<div class="box">
+    <div class="columns">
+        <div class="column is-6">
+            <div class="field has-addons">
+                <div class="control has-icons-left is-expanded">
+                    <input class="input is-large" type="text" id="searchInput" placeholder="Begriff suchen...">
+                    <span class="icon is-left">
+                        <i class="fas fa-search"></i>
+                    </span>
+                </div>
+                <div class="control">
+                    <button class="button is-large is-primary" onclick="searchBegriffe()">
+                        <span class="icon">
+                            <i class="fas fa-search"></i>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="column is-3">
+            <div class="select is-large is-fullwidth">
+                <select id="categoryFilter" onchange="filterBegriffe()">
+                    <option value="">Alle Kategorien</option>
+                    <option value="rechtliche-grundlagen">Rechtliche Grundlagen</option>
+                    <option value="vertragsrecht">Vertragsrecht</option>
+                    <option value="eigentumsrecht">Eigentumsrecht</option>
+                    <option value="familienrecht">Familienrecht</option>
+                </select>
+            </div>
+        </div>
+        <div class="column is-3">
+            <div class="select is-large is-fullwidth">
+                <select id="translateLanguageSelect" onchange="changeTranslationLanguage(this.value)">
+                    <option value="">Keine Übersetzung</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="ar">🇸🇦 العربية</option>
+                    <option value="tr">🇹🇷 Türkçe</option>
+                    <option value="ru">🇷🇺 Русский</option>
+                    <option value="pl">🇵🇱 Polski</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="pt">🇵🇹 Português</option>
+                    <option value="nl">🇳🇱 Nederlands</option>
+                    <option value="fa">🇮🇷 فارسی</option>
+                    <option value="ur">🇵🇰 اردو</option>
+                    <option value="hi">🇮🇳 हिन्दी</option>
+                    <option value="zh">🇨🇳 中文</option>
+                    <option value="vi">🇻🇳 Tiếng Việt</option>
+                    <option value="th">🇹🇭 ไทย</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filter Tags -->
+    <div class="field is-grouped is-grouped-multiline">
+        <div class="control">
+            <div class="tags has-addons">
+                <span class="tag">Status:</span>
+                <span class="tag is-light">
+                    <input type="radio" name="statusFilter" value="all" checked> Alle
+                </span>
+                <span class="tag is-warning">
+                    <input type="radio" name="statusFilter" value="todo"> Zu lernen
+                </span>
+                <span class="tag is-success">
+                    <input type="radio" name="statusFilter" value="completed"> Gelernt
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Begriff Cards Grid -->
+<div class="columns is-multiline" id="begriffeGrid">
+    {% for begriff in content %}
+    <div class="column is-12-tablet is-6-desktop is-4-widescreen begriff-item" 
+         data-category="{{ begriff.content_data.kategorie if begriff.content_data.kategorie else 'general' }}"
+         data-completed="{{ 'true' if begriff.is_completed else 'false' }}">
+        
+        <div class="box content-card {{ 'completed' if begriff.is_completed else '' }}" 
+             onclick="openBegriffModal({{ begriff.id }})">
+            
+            <!-- Card Header -->
+            <div class="level is-mobile">
+                <div class="level-left">
+                    <div class="level-item">
+                        <span class="tag category-tag is-primary">
+                            {{ begriff.content_data.kategorie if begriff.content_data.kategorie else 'Allgemein' }}
+                        </span>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        {% if begriff.is_completed %}
+                            <span class="icon has-text-success">
+                                <i class="fas fa-check-circle"></i>
+                            </span>
+                        {% else %}
+                            <span class="icon has-text-grey-light">
+                                <i class="far fa-circle"></i>
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Begriff Title -->
+            <h3 class="title is-4 mb-3">{{ begriff.title }}</h3>
+            
+            <!-- Short Definition -->
+            <div class="content">
+                <p>{{ begriff.content_data.definition[:100] }}{{ '...' if begriff.content_data.definition|length > 100 else '' }}</p>
+            </div>
+            
+            <!-- Dynamic Translation Preview -->
+            <div class="translation-preview" id="translation-{{ begriff.id }}" style="display: none;">
+                <div class="translation-item">
+                    <strong><span class="translation-lang">EN</span>:</strong> 
+                    <span class="translation-text">Übersetzung wird geladen...</span>
+                </div>
+            </div>
+            
+            <!-- Difficulty and Score -->
+            <div class="level is-mobile">
+                <div class="level-left">
+                    <div class="level-item">
+                        <span class="tag is-light">
+                            {% if begriff.content_data.schwierigkeit == 'leicht' %}
+                                🟢 Leicht
+                            {% elif begriff.content_data.schwierigkeit == 'mittel' %}
+                                🟡 Mittel
+                            {% else %}
+                                🔴 Schwer
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        {% if begriff.score %}
+                            <span class="tag is-success">{{ begriff.score }}%</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Begriff Detail Modal -->
+<div class="modal" id="begriffModal">
+    <div class="modal-background" onclick="closeBegriffModal()"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title" id="modalTitle">Begriff Details</p>
+            <button class="delete" onclick="closeBegriffModal()"></button>
+        </header>
+        <section class="modal-card-body">
+            <!-- Begriff Content -->
+            <div class="content">
+                <div class="level is-mobile">
+                    <div class="level-left">
+                        <div class="level-item">
+                            <span class="tag is-primary" id="modalCategory">Kategorie</span>
+                        </div>
+                    </div>
+                    <div class="level-right">
+                        <div class="level-item">
+                            <span class="tag" id="modalDifficulty">Schwierigkeit</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <h3 class="title is-3" id="modalBegriff">Begriff</h3>
+                <p class="subtitle is-5" id="modalDefinition">Definition</p>
+                
+                <!-- Example -->
+                <div class="box has-background-light" id="modalExampleBox">
+                    <h5 class="title is-6">💡 Beispiel:</h5>
+                    <p id="modalExample">Beispieltext</p>
+                </div>
+                
+                <!-- Dynamic Translations -->
+                <div class="box has-background-info-light" id="modalTranslationsBox" style="display: none;">
+                    <h5 class="title is-6">🌍 Live-Übersetzung:</h5>
+                    <div id="modalTranslations">
+                        <!-- Dynamic translations will be loaded here -->
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div class="field">
+                    <label class="label">📝 Persönliche Notizen:</label>
+                    <div class="control">
+                        <textarea class="textarea" id="modalNotes" placeholder="Hier kannst du persönliche Notizen hinzufügen..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button is-success" id="toggleLearnedBtn" onclick="toggleLearned()">
+                <span class="icon"><i class="fas fa-check"></i></span>
+                <span>Als gelernt markieren</span>
+            </button>
+            <button class="button is-primary" onclick="saveNotes()">
+                <span class="icon"><i class="fas fa-save"></i></span>
+                <span>Notizen speichern</span>
+            </button>
+            <button class="button" onclick="closeBegriffModal()">Schließen</button>
+        </footer>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let currentBegriffId = null;
+let begriffeData = {{ content|tojson }};
+let currentTranslationLanguage = '';
+let translationCache = new Map();
+
+// Language mappings
+const languageLabels = {
+    'de': '🇩🇪 Deutsch',
+    'en': '🇬🇧 English',
+    'ar': '🇸🇦 العربية',  
+    'tr': '🇹🇷 Türkçe',
+    'ru': '🇷🇺 Русский',
+    'pl': '🇵🇱 Polski',
+    'it': '🇮🇹 Italiano',
+    'fr': '🇫🇷 Français',
+    'es': '🇪🇸 Español',
+    'pt': '🇵🇹 Português',
+    'nl': '🇳🇱 Nederlands',
+    'fa': '🇮🇷 فارسی',
+    'ur': '🇵🇰 اردو',
+    'hi': '🇮🇳 हिन्दी',
+    'zh': '🇨🇳 中文',
+    'vi': '🇻🇳 Tiếng Việt',
+    'th': '🇹🇭 ไทย'
+};
+
+// Search functionality
+function searchBegriffe() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const cards = document.querySelectorAll('.begriff-item');
+    
+    cards.forEach(card => {
+        const title = card.querySelector('.title').textContent.toLowerCase();
+        const content = card.querySelector('.content p').textContent.toLowerCase();
+        
+        if (title.includes(searchTerm) || content.includes(searchTerm)) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Filter functionality
+function filterBegriffe() {
+    const category = document.getElementById('categoryFilter').value;
+    const statusFilter = document.querySelector('input[name="statusFilter"]:checked').value;
+    const cards = document.querySelectorAll('.begriff-item');
+    
+    cards.forEach(card => {
+        let showCard = true;
+        
+        // Category filter
+        if (category && card.dataset.category !== category) {
+            showCard = false;
+        }
+        
+        // Status filter
+        if (statusFilter === 'completed' && card.dataset.completed !== 'true') {
+            showCard = false;
+        } else if (statusFilter === 'todo' && card.dataset.completed === 'true') {
+            showCard = false;
+        }
+        
+        card.style.display = showCard ? 'block' : 'none';
+    });
+}
+
+// Modal functions
+function openBegriffModal(begriffId) {
+    currentBegriffId = begriffId;
+    const begriff = begriffeData.find(b => b.id === begriffId);
+    
+    if (!begriff) return;
+    
+    // Populate modal
+    document.getElementById('modalTitle').textContent = begriff.title;
+    document.getElementById('modalBegriff').textContent = begriff.title;
+    document.getElementById('modalDefinition').textContent = begriff.content_data.definition;
+    document.getElementById('modalCategory').textContent = begriff.content_data.kategorie || 'Allgemein';
+    document.getElementById('modalDifficulty').textContent = begriff.content_data.schwierigkeit || 'Mittel';
+    
+    // Example
+    if (begriff.content_data.beispiel) {
+        document.getElementById('modalExample').textContent = begriff.content_data.beispiel;
+        document.getElementById('modalExampleBox').style.display = 'block';
+    } else {
+        document.getElementById('modalExampleBox').style.display = 'none';
+    }
+    
+    // Load translations
+    loadTranslations(begriff);
+    
+    // Notes
+    document.getElementById('modalNotes').value = begriff.notes || '';
+    
+    // Toggle button
+    const toggleBtn = document.getElementById('toggleLearnedBtn');
+    if (begriff.is_completed) {
+        toggleBtn.innerHTML = '<span class="icon"><i class="fas fa-times"></i></span><span>Als ungelernt markieren</span>';
+        toggleBtn.className = 'button is-warning';
+    } else {
+        toggleBtn.innerHTML = '<span class="icon"><i class="fas fa-check"></i></span><span>Als gelernt markieren</span>';
+        toggleBtn.className = 'button is-success';
+    }
+    
+    // Show modal
+    document.getElementById('begriffModal').classList.add('is-active');
+}
+
+function closeBegriffModal() {
+    document.getElementById('begriffModal').classList.remove('is-active');
+    currentBegriffId = null;
+}
+
+async function loadTranslations(begriff) {
+    const translationsDiv = document.getElementById('modalTranslations');
+    const translationsBox = document.getElementById('modalTranslationsBox');
+    
+    if (!translationsDiv || !currentTranslationLanguage) {
+        translationsBox.style.display = 'none';
+        return;
+    }
+    
+    translationsBox.style.display = 'block';
+    translationsDiv.innerHTML = '<p class="has-text-grey">Übersetzung wird geladen...</p>';
+    
+    try {
+        // Translate term, definition, and example
+        const [translatedTerm, translatedDefinition, translatedExample] = await Promise.all([
+            translateText(begriff.title, 'de', currentTranslationLanguage),
+            translateText(begriff.content_data.definition, 'de', currentTranslationLanguage),
+            begriff.content_data.beispiel ? translateText(begriff.content_data.beispiel, 'de', currentTranslationLanguage) : Promise.resolve('')
+        ]);
+        
+        translationsDiv.innerHTML = `
+            <div class="translation-item mb-3">
+                <div class="columns is-mobile">
+                    <div class="column is-narrow">
+                        <strong>Begriff:</strong>
+                    </div>
+                    <div class="column">
+                        ${translatedTerm}
+                    </div>
+                </div>
+            </div>
+            <div class="translation-item mb-3">
+                <div class="columns is-mobile">
+                    <div class="column is-narrow">
+                        <strong>Definition:</strong>
+                    </div>
+                    <div class="column">
+                        ${translatedDefinition}
+                    </div>
+                </div>
+            </div>
+            ${translatedExample ? `
+                <div class="translation-item">
+                    <div class="columns is-mobile">
+                        <div class="column is-narrow">
+                            <strong>Beispiel:</strong>
+                        </div>
+                        <div class="column">
+                            ${translatedExample}
+                        </div>
+                    </div>
+                </div>
+            ` : ''}
+        `;
+        
+    } catch (error) {
+        console.error('Translation error:', error);
+        translationsDiv.innerHTML = '<p class="has-text-danger">Übersetzung fehlgeschlagen</p>';
+    }
+}
+
+// Change translation language
+async function changeTranslationLanguage(language) {
+    currentTranslationLanguage = language;
+    
+    if (language) {
+        // Show translations in cards
+        document.querySelectorAll('.translation-preview').forEach(preview => {
+            preview.style.display = 'block';
+            const langSpan = preview.querySelector('.translation-lang');
+            const textSpan = preview.querySelector('.translation-text');
+            
+            langSpan.textContent = language.toUpperCase();
+            textSpan.textContent = 'Übersetzung wird geladen...';
+        });
+        
+        // Translate all visible cards
+        await translateVisibleCards();
+    } else {
+        // Hide all translations
+        document.querySelectorAll('.translation-preview').forEach(preview => {
+            preview.style.display = 'none';
+        });
+    }
+    
+    // Update modal if open
+    if (currentBegriffId) {
+        const begriff = begriffeData.find(b => b.id === currentBegriffId);
+        if (begriff) {
+            await loadTranslations(begriff);
+        }
+    }
+}
+
+// Translate visible cards
+async function translateVisibleCards() {
+    if (!currentTranslationLanguage) return;
+    
+    const visibleCards = document.querySelectorAll('.begriff-item[style*="block"], .begriff-item:not([style*="none"])');
+    
+    for (const card of visibleCards) {
+        const begriffId = parseInt(card.querySelector('[onclick]').getAttribute('onclick').match(/\d+/)[0]);
+        const begriff = begriffeData.find(b => b.id === begriffId);
+        
+        if (begriff) {
+            const preview = card.querySelector('.translation-preview');
+            const textSpan = preview.querySelector('.translation-text');
+            
+            try {
+                const translatedTitle = await translateText(begriff.title, 'de', currentTranslationLanguage);
+                textSpan.textContent = translatedTitle;
+            } catch (error) {
+                textSpan.textContent = 'Übersetzung fehlgeschlagen';
+            }
+        }
+    }
+}
+
+// Google Translate API function (same as flashcards)
+async function translateText(text, fromLang, toLang) {
+    // Create cache key
+    const cacheKey = `${fromLang}-${toLang}-${text}`;
+    
+    // Check cache first
+    if (translationCache.has(cacheKey)) {
+        return translationCache.get(cacheKey);
+    }
+    
+    try {
+        // Use MyMemory Translation API (free alternative to Google Translate)
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`);
+        const data = await response.json();
+        
+        let translation = data.responseData.translatedText;
+        
+        // Fix HTML entities and common translation issues
+        translation = translation
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&nbsp;/g, ' ')
+            // Fix common MyMemory quirks
+            .replace(/UNTRANSLATED/g, text)
+            .replace(/NO QUERY SPECIFIED/g, text);
+        
+        // If API returns "undefined" as string, return original text
+        if (translation === 'undefined' || translation.toLowerCase() === 'undefined') {
+            translation = text;
+        }
+        
+        // Store in cache
+        translationCache.set(cacheKey, translation);
+        
+        return translation;
+    } catch (error) {
+        console.log('Translation failed:', error);
+        return text; // Return original text if translation fails
+    }
+}
+
+async function toggleLearned() {
+    if (!currentBegriffId) return;
+    
+    const begriff = begriffeData.find(b => b.id === currentBegriffId);
+    const newStatus = !begriff.is_completed;
+    
+    try {
+        const response = await fetch(`/api/content/${currentBegriffId}/progress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ completed: newStatus })
+        });
+        
+        if (response.ok) {
+            // Update local data
+            begriff.is_completed = newStatus;
+            
+            // Update UI
+            const card = document.querySelector(`[onclick="openBegriffModal(${currentBegriffId})"]`);
+            if (newStatus) {
+                card.classList.add('completed');
+                card.parentElement.dataset.completed = 'true';
+            } else {
+                card.classList.remove('completed');
+                card.parentElement.dataset.completed = 'false';
+            }
+            
+            // Show success toast
+            bulmaToast.toast({
+                message: newStatus ? 'Begriff als gelernt markiert! 🎉' : 'Begriff als ungelernt markiert',
+                type: newStatus ? 'is-success' : 'is-warning',
+                duration: 2000,
+                position: 'top-right'
+            });
+            
+            closeBegriffModal();
+            location.reload(); // Refresh to update progress bar
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        bulmaToast.toast({
+            message: 'Fehler beim Speichern',
+            type: 'is-danger',
+            duration: 3000
+        });
+    }
+}
+
+async function saveNotes() {
+    if (!currentBegriffId) return;
+    
+    const notes = document.getElementById('modalNotes').value;
+    
+    try {
+        const response = await fetch(`/api/content/${currentBegriffId}/progress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notes: notes })
+        });
+        
+        if (response.ok) {
+            bulmaToast.toast({
+                message: 'Notizen gespeichert! 📝',
+                type: 'is-success',
+                duration: 2000
+            });
+        }
+    } catch (error) {
+        bulmaToast.toast({
+            message: 'Fehler beim Speichern',
+            type: 'is-danger',
+            duration: 3000
+        });
+    }
+}
+
+// Event listeners
+document.getElementById('searchInput').addEventListener('input', searchBegriffe);
+document.querySelectorAll('input[name="statusFilter"]').forEach(radio => {
+    radio.addEventListener('change', filterBegriffe);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        closeBegriffModal();
+    }
+});
+</script>
+{% endblock %}

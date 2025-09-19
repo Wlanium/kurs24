@@ -1,0 +1,809 @@
+{% extends "base.html" %}
+
+{% block title %}Lernkarten - {{ course.title if course else 'Mein Kurs' }}{% endblock %}
+
+{% block content %}
+<!-- Header with Spaced Repetition Info -->
+<div class="box">
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <h1 class="title is-3">
+                    <span class="icon-text">
+                        <span class="icon has-text-warning">
+                            <i class="fas fa-layer-group"></i>
+                        </span>
+                        <span>Lernkarten Training</span>
+                    </span>
+                </h1>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <div class="tags has-addons">
+                    <span class="tag is-dark">Heute fällig</span>
+                    <span class="tag is-warning" id="dueCards">{{ content|selectattr("is_due")|list|length }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Spaced Repetition Algorithm Info -->
+    <div class="notification is-info is-light">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <span class="icon">
+                        <i class="fas fa-brain"></i>
+                    </span>
+                    <div class="ml-3">
+                        <p class="has-text-weight-bold">🧠 Spaced Repetition Algorithmus aktiv</p>
+                        <p class="is-size-7">Optimiert dein Langzeitgedächtnis durch wissenschaftlich erprobte Wiederholungsintervalle</p>
+                    </div>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <span class="tag is-info">🔄 Aktiv</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Learning Session Selector -->
+<div class="box" id="sessionSelector">
+    <h3 class="title is-4">📚 Lerneinheit starten</h3>
+    
+    <div class="columns">
+        <div class="column is-4">
+            <div class="box content-card" onclick="startSession('due')">
+                <div class="has-text-centered">
+                    <div class="content-type-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h4 class="title is-5">⏰ Fällige Karten</h4>
+                    <p class="subtitle is-6 has-text-grey">{{ content|selectattr("is_due")|list|length }} Karten</p>
+                    <p>Wiederhole Karten, die heute zur Auffrischung anstehen.</p>
+                    <span class="tag is-warning">Empfohlen</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="column is-4">
+            <div class="box content-card" onclick="startSession('new')">
+                <div class="has-text-centered">
+                    <div class="content-type-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <h4 class="title is-5">🆕 Neue Karten</h4>
+                    <p class="subtitle is-6 has-text-grey">{{ content|selectattr("is_new")|list|length }} Karten</p>
+                    <p>Lerne neue Begriffe und füge sie zu deinem Lernplan hinzu.</p>
+                    <span class="tag is-primary">Lernen</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="column is-4">
+            <div class="box content-card" onclick="startSession('all')">
+                <div class="has-text-centered">
+                    <div class="content-type-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
+                        <i class="fas fa-th-large"></i>
+                    </div>
+                    <h4 class="title is-5">📋 Alle Karten</h4>
+                    <p class="subtitle is-6 has-text-grey">{{ content|length }} Karten</p>
+                    <p>Freies Lernen ohne Algorithmus. Durchsuche alle verfügbaren Karten.</p>
+                    <span class="tag is-success">Flexibel</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Daily Stats -->
+    <div class="columns">
+        <div class="column is-3">
+            <div class="stat-card">
+                <div class="stat-value" id="todayLearned">0</div>
+                <div class="stat-label">Heute gelernt</div>
+            </div>
+        </div>
+        <div class="column is-3">
+            <div class="stat-card">
+                <div class="stat-value" id="todayTime">0m</div>
+                <div class="stat-label">Lernzeit heute</div>
+            </div>
+        </div>
+        <div class="column is-3">
+            <div class="stat-card">
+                <div class="stat-value" id="currentStreak">7</div>
+                <div class="stat-label">Lernstreak (Tage)</div>
+            </div>
+        </div>
+        <div class="column is-3">
+            <div class="stat-card">
+                <div class="stat-value" id="masterLevel">🏆 12</div>
+                <div class="stat-label">Meister-Level</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flashcard Learning Interface -->
+<div class="box" id="flashcardInterface" style="display: none;">
+    <!-- Session Header -->
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <div class="tags has-addons">
+                    <span class="tag is-dark">Karte</span>
+                    <span class="tag is-primary" id="cardCounter">1 / 10</span>
+                </div>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <div class="tags has-addons">
+                    <span class="tag is-dark">Modus</span>
+                    <span class="tag is-warning" id="sessionMode">Fällige Karten</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <progress class="progress is-warning" id="sessionProgress" value="0" max="100">0%</progress>
+    
+    <!-- Flashcard -->
+    <div class="flashcard-container">
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+            <!-- Front Side -->
+            <div class="flashcard-side flashcard-front">
+                <div class="card-header">
+                    <span class="tag is-info" id="cardCategory">Rechtliche Grundlagen</span>
+                    <span class="tag" id="cardDifficulty">🟡 Mittel</span>
+                </div>
+                
+                <div class="card-content">
+                    <h2 class="title is-2 has-text-centered" id="cardTerm">Begriff</h2>
+                    
+                    <!-- Translation if enabled -->
+                    <div id="termTranslation" style="display: none;">
+                        <div class="translation-item has-text-centered">
+                            <strong>{{ session.translate_to|upper if session.translate_to }}:</strong>
+                            <span id="translatedTerm">Translation...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <p class="has-text-grey has-text-centered">
+                        <span class="icon"><i class="fas fa-hand-pointer"></i></span>
+                        Klicken zum Umdrehen
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Back Side -->
+            <div class="flashcard-side flashcard-back">
+                <div class="card-header">
+                    <span class="tag is-success">Definition</span>
+                    <span class="tag is-light" id="cardRepetition">Rep. 1</span>
+                </div>
+                
+                <div class="card-content">
+                    <p class="title is-4" id="cardDefinition">Definition wird geladen...</p>
+                    
+                    <!-- Example -->
+                    <div id="cardExampleSection" style="display: none;">
+                        <div class="box has-background-light">
+                            <h5 class="title is-6">💡 Beispiel:</h5>
+                            <p id="cardExample">Beispieltext</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Translation -->
+                    <div id="definitionTranslation" style="display: none;">
+                        <div class="translation-item">
+                            <strong>{{ session.translate_to|upper if session.translate_to }}:</strong>
+                            <span id="translatedDefinition">Translation...</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-footer">
+                    <p class="has-text-grey has-text-centered">Wie gut kennst du diesen Begriff?</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Difficulty Rating Buttons -->
+    <div class="field is-grouped is-grouped-centered" id="ratingButtons" style="display: none;">
+        <div class="control">
+            <button class="button is-danger is-large" onclick="rateCard(1)">
+                <span class="icon"><i class="fas fa-times"></i></span>
+                <span>Nicht gewusst</span>
+            </button>
+        </div>
+        <div class="control">
+            <button class="button is-warning is-large" onclick="rateCard(2)">
+                <span class="icon"><i class="fas fa-meh"></i></span>
+                <span>Schwer</span>
+            </button>
+        </div>
+        <div class="control">
+            <button class="button is-info is-large" onclick="rateCard(3)">
+                <span class="icon"><i class="fas fa-smile"></i></span>
+                <span>Gut</span>
+            </button>
+        </div>
+        <div class="control">
+            <button class="button is-success is-large" onclick="rateCard(4)">
+                <span class="icon"><i class="fas fa-star"></i></span>
+                <span>Perfekt</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Session Controls -->
+    <div class="field is-grouped is-grouped-centered" id="sessionControls">
+        <div class="control">
+            <button class="button is-light" onclick="pauseSession()">
+                <span class="icon"><i class="fas fa-pause"></i></span>
+                <span>Pausieren</span>
+            </button>
+        </div>
+        <div class="control">
+            <button class="button is-danger is-outlined" onclick="endSession()">
+                <span class="icon"><i class="fas fa-stop"></i></span>
+                <span>Beenden</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Session Results -->
+<div class="box" id="sessionResults" style="display: none;">
+    <div class="has-text-centered">
+        <div class="content-type-icon" style="background: linear-gradient(135deg, #10b981, #059669); width: 4rem; height: 4rem; font-size: 2rem;">
+            <i class="fas fa-medal"></i>
+        </div>
+        
+        <h2 class="title is-2">Lerneinheit abgeschlossen! 🎉</h2>
+        <p class="subtitle is-4">Großartige Arbeit! Hier sind deine Ergebnisse:</p>
+        
+        <!-- Results Stats -->
+        <div class="columns is-centered">
+            <div class="column is-10">
+                <div class="box has-background-success-light">
+                    <div class="columns">
+                        <div class="column">
+                            <div class="stat-card">
+                                <div class="stat-value" id="cardsStudied">0</div>
+                                <div class="stat-label">Karten bearbeitet</div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="stat-card">
+                                <div class="stat-value" id="averageRating">0.0</div>
+                                <div class="stat-label">Durchschnittsbewertung</div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="stat-card">
+                                <div class="stat-value" id="sessionTime">0m</div>
+                                <div class="stat-label">Lernzeit</div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="stat-card">
+                                <div class="stat-value" id="xpEarned">+25</div>
+                                <div class="stat-label">XP erhalten</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Next Review Schedule -->
+        <div class="notification is-info is-light">
+            <h4 class="title is-5">📅 Nächste Wiederholungen</h4>
+            <div id="nextReviews">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="field is-grouped is-grouped-centered">
+            <div class="control">
+                <button class="button is-warning is-large" onclick="startNewSession()">
+                    <span class="icon"><i class="fas fa-redo"></i></span>
+                    <span>Neue Einheit starten</span>
+                </button>
+            </div>
+            <div class="control">
+                <button class="button is-info" onclick="reviewDifficult()">
+                    <span class="icon"><i class="fas fa-eye"></i></span>
+                    <span>Schwere Begriffe üben</span>
+                </button>
+            </div>
+            <div class="control">
+                <a href="{{ url_for('main.index') }}" class="button is-light">
+                    <span class="icon"><i class="fas fa-home"></i></span>
+                    <span>Zur Übersicht</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Flashcard Styles */
+.flashcard-container {
+    perspective: 1000px;
+    height: 400px;
+    margin: 2rem 0;
+}
+
+.flashcard {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform 0.6s;
+    cursor: pointer;
+}
+
+.flashcard.flipped {
+    transform: rotateY(180deg);
+}
+
+.flashcard-side {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border: 2px solid #e5e7eb;
+}
+
+.flashcard-front {
+    background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+}
+
+.flashcard-back {
+    background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
+    transform: rotateY(180deg);
+}
+
+.card-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.card-content {
+    flex: 1;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.card-footer {
+    padding: 1rem;
+    border-top: 1px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Animation for card appearance */
+.flashcard-appear {
+    animation: slideInUp 0.5s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Rating buttons hover effects */
+.button.is-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Mobile responsive */
+@media screen and (max-width: 768px) {
+    .flashcard-container {
+        height: 350px;
+    }
+    
+    .card-content h2 {
+        font-size: 1.5rem !important;
+    }
+    
+    .field.is-grouped .control {
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Flashcard Learning State
+let flashcardsData = {{ content|tojson }};
+let currentSession = [];
+let currentCardIndex = 0;
+let sessionStartTime = null;
+let sessionMode = '';
+let isCardFlipped = false;
+let sessionStats = {
+    cardsStudied: 0,
+    ratings: [],
+    timeSpent: 0
+};
+
+// Initialize flashcard system
+document.addEventListener('DOMContentLoaded', () => {
+    updateDashboardStats();
+});
+
+function startSession(mode) {
+    sessionMode = mode;
+    currentCardIndex = 0;
+    sessionStartTime = new Date();
+    sessionStats = { cardsStudied: 0, ratings: [], timeSpent: 0 };
+    
+    // Filter cards based on mode
+    switch(mode) {
+        case 'due':
+            currentSession = flashcardsData.filter(card => card.is_due);
+            break;
+        case 'new':
+            currentSession = flashcardsData.filter(card => card.is_new);
+            break;
+        case 'all':
+            currentSession = [...flashcardsData];
+            break;
+    }
+    
+    if (currentSession.length === 0) {
+        bulmaToast.toast({
+            message: 'Keine Karten in dieser Kategorie verfügbar',
+            type: 'is-warning',
+            duration: 3000
+        });
+        return;
+    }
+    
+    // Shuffle for randomness
+    currentSession = shuffleArray([...currentSession]);
+    
+    // Show interface
+    document.getElementById('sessionSelector').style.display = 'none';
+    document.getElementById('flashcardInterface').style.display = 'block';
+    
+    // Update mode display
+    const modeNames = {
+        'due': 'Fällige Karten',
+        'new': 'Neue Karten',
+        'all': 'Alle Karten'
+    };
+    document.getElementById('sessionMode').textContent = modeNames[mode];
+    
+    loadCard();
+}
+
+function loadCard() {
+    if (currentCardIndex >= currentSession.length) {
+        endSession();
+        return;
+    }
+    
+    const card = currentSession[currentCardIndex];
+    const flashcardElement = document.getElementById('flashcard');
+    
+    // Reset card state
+    isCardFlipped = false;
+    flashcardElement.classList.remove('flipped');
+    flashcardElement.classList.add('flashcard-appear');
+    
+    // Update counters
+    document.getElementById('cardCounter').textContent = `${currentCardIndex + 1} / ${currentSession.length}`;
+    document.getElementById('sessionProgress').value = (currentCardIndex / currentSession.length) * 100;
+    
+    // Load card content
+    document.getElementById('cardTerm').textContent = card.title;
+    document.getElementById('cardDefinition').textContent = card.content_data.definition;
+    document.getElementById('cardCategory').textContent = card.content_data.kategorie || 'Allgemein';
+    
+    // Set difficulty
+    const difficulty = card.content_data.schwierigkeit || 'mittel';
+    const difficultyEmoji = {
+        'leicht': '🟢 Leicht',
+        'mittel': '🟡 Mittel', 
+        'schwer': '🔴 Schwer'
+    };
+    document.getElementById('cardDifficulty').textContent = difficultyEmoji[difficulty];
+    
+    // Set repetition count
+    document.getElementById('cardRepetition').textContent = `Rep. ${card.repetition_count || 1}`;
+    
+    // Load example if available
+    if (card.content_data.beispiel) {
+        document.getElementById('cardExample').textContent = card.content_data.beispiel;
+        document.getElementById('cardExampleSection').style.display = 'block';
+    } else {
+        document.getElementById('cardExampleSection').style.display = 'none';
+    }
+    
+    // Load translations if enabled
+    if ({{ 'true' if session.translate_to else 'false' }}) {
+        loadCardTranslations(card);
+    }
+    
+    // Hide rating buttons initially
+    document.getElementById('ratingButtons').style.display = 'none';
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        flashcardElement.classList.remove('flashcard-appear');
+    }, 500);
+}
+
+function flipCard() {
+    if (isCardFlipped) return;
+    
+    const flashcard = document.getElementById('flashcard');
+    flashcard.classList.add('flipped');
+    isCardFlipped = true;
+    
+    // Show rating buttons after flip
+    setTimeout(() => {
+        document.getElementById('ratingButtons').style.display = 'block';
+    }, 300);
+}
+
+function rateCard(rating) {
+    const card = currentSession[currentCardIndex];
+    
+    // Store rating
+    sessionStats.ratings.push(rating);
+    sessionStats.cardsStudied++;
+    
+    // Calculate next review date based on spaced repetition
+    const nextReview = calculateNextReview(card, rating);
+    
+    // Save progress to backend
+    saveCardProgress(card.id, rating, nextReview);
+    
+    // Show feedback toast
+    const messages = {
+        1: 'Karte wird häufiger wiederholt 🔄',
+        2: 'Karte wird bald wiederholt ⏰',
+        3: 'Gute Arbeit! Nächste Wiederholung in ein paar Tagen 👍',
+        4: 'Perfekt! Längeres Wiederholungsintervall 🌟'
+    };
+    
+    bulmaToast.toast({
+        message: messages[rating],
+        type: rating >= 3 ? 'is-success' : 'is-warning',
+        duration: 2000,
+        position: 'top-right'
+    });
+    
+    // Proceed to next card
+    setTimeout(() => {
+        currentCardIndex++;
+        loadCard();
+    }, 1000);
+}
+
+function calculateNextReview(card, rating) {
+    // Simplified spaced repetition algorithm
+    const baseIntervals = {
+        1: 1,     // 1 day (again)
+        2: 3,     // 3 days (hard)
+        3: 7,     // 1 week (good)
+        4: 14     // 2 weeks (easy)
+    };
+    
+    const repetitionCount = card.repetition_count || 1;
+    const easeFactor = card.ease_factor || 2.5;
+    
+    let interval = baseIntervals[rating];
+    
+    // Increase interval based on repetition count for good/easy ratings
+    if (rating >= 3) {
+        interval = Math.round(interval * Math.pow(easeFactor, repetitionCount - 1));
+    }
+    
+    const nextReview = new Date();
+    nextReview.setDate(nextReview.getDate() + interval);
+    
+    return nextReview.toISOString().split('T')[0]; // YYYY-MM-DD format
+}
+
+async function saveCardProgress(cardId, rating, nextReview) {
+    try {
+        const response = await fetch(`/api/content/${cardId}/progress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                rating: rating,
+                next_review: nextReview,
+                completed: rating >= 3
+            })
+        });
+        
+        if (!response.ok) {
+            console.error('Failed to save progress');
+        }
+    } catch (error) {
+        console.error('Error saving progress:', error);
+    }
+}
+
+function endSession() {
+    const endTime = new Date();
+    sessionStats.timeSpent = Math.round((endTime - sessionStartTime) / 1000 / 60); // minutes
+    
+    // Hide interface
+    document.getElementById('flashcardInterface').style.display = 'none';
+    document.getElementById('sessionResults').style.display = 'block';
+    
+    // Update results
+    document.getElementById('cardsStudied').textContent = sessionStats.cardsStudied;
+    document.getElementById('sessionTime').textContent = `${sessionStats.timeSpent}m`;
+    
+    const avgRating = sessionStats.ratings.length > 0 ? 
+        (sessionStats.ratings.reduce((a, b) => a + b, 0) / sessionStats.ratings.length).toFixed(1) : 0;
+    document.getElementById('averageRating').textContent = avgRating;
+    
+    // Calculate XP earned
+    const xpEarned = sessionStats.cardsStudied * 5 + sessionStats.ratings.filter(r => r >= 3).length * 5;
+    document.getElementById('xpEarned').textContent = `+${xpEarned}`;
+    
+    // Load next reviews
+    loadNextReviews();
+}
+
+function loadNextReviews() {
+    const reviewsDiv = document.getElementById('nextReviews');
+    
+    // Mock data for next reviews
+    reviewsDiv.innerHTML = `
+        <div class="columns">
+            <div class="column">
+                <div class="has-text-centered">
+                    <p class="title is-6">Morgen</p>
+                    <p class="has-text-weight-bold">3 Karten</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="has-text-centered">
+                    <p class="title is-6">In 3 Tagen</p>
+                    <p class="has-text-weight-bold">7 Karten</p>
+                </div>
+            </div>
+            <div class="column">
+                <div class="has-text-centered">
+                    <p class="title is-6">Nächste Woche</p>
+                    <p class="has-text-weight-bold">12 Karten</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function pauseSession() {
+    // TODO: Implement session pause
+    bulmaToast.toast({
+        message: 'Session pausiert - Feature wird implementiert',
+        type: 'is-info',
+        duration: 3000
+    });
+}
+
+function startNewSession() {
+    document.getElementById('sessionResults').style.display = 'none';
+    document.getElementById('sessionSelector').style.display = 'block';
+}
+
+function reviewDifficult() {
+    // Filter cards with rating 1-2 for review
+    const difficultCards = flashcardsData.filter(card => 
+        card.last_rating && card.last_rating <= 2
+    );
+    
+    if (difficultCards.length === 0) {
+        bulmaToast.toast({
+            message: 'Keine schweren Begriffe zum Üben verfügbar!',
+            type: 'is-success',
+            duration: 3000
+        });
+        return;
+    }
+    
+    currentSession = difficultCards;
+    sessionMode = 'review';
+    currentCardIndex = 0;
+    sessionStartTime = new Date();
+    
+    document.getElementById('sessionResults').style.display = 'none';
+    document.getElementById('flashcardInterface').style.display = 'block';
+    document.getElementById('sessionMode').textContent = 'Schwere Begriffe';
+    
+    loadCard();
+}
+
+function loadCardTranslations(card) {
+    // Load term translation
+    if (card.translations && card.translations['{{ session.translate_to if session.translate_to }}']) {
+        document.getElementById('translatedTerm').textContent = 
+            card.translations['{{ session.translate_to if session.translate_to }}'];
+        document.getElementById('termTranslation').style.display = 'block';
+    }
+    
+    // TODO: Load definition translation
+    document.getElementById('definitionTranslation').style.display = 'none';
+}
+
+function updateDashboardStats() {
+    // Mock data - would come from backend in real implementation
+    document.getElementById('todayLearned').textContent = '23';
+    document.getElementById('todayTime').textContent = '45m';
+}
+
+// Utility functions
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('flashcardInterface').style.display !== 'none') {
+        // Space to flip card
+        if (e.key === ' ' && !isCardFlipped) {
+            e.preventDefault();
+            flipCard();
+        }
+        
+        // Number keys for rating (only when card is flipped)
+        if (isCardFlipped && e.key >= '1' && e.key <= '4') {
+            const rating = parseInt(e.key);
+            rateCard(rating);
+        }
+        
+        // Escape to pause
+        if (e.key === 'Escape') {
+            pauseSession();
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,633 @@
+{% extends "base.html" %}
+
+{% block title %}Quiz Training - {{ course.title if course else 'Mein Kurs' }}{% endblock %}
+
+{% block content %}
+<!-- Header with Stats -->
+<div class="box">
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <h1 class="title is-3">
+                    <span class="icon-text">
+                        <span class="icon has-text-success">
+                            <i class="fas fa-brain"></i>
+                        </span>
+                        <span>Quiz Training</span>
+                    </span>
+                </h1>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <div class="tags has-addons">
+                    <span class="tag is-dark">Erfolgsquote</span>
+                    <span class="tag is-success" id="successRate">85%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Indicators -->
+    <div class="columns">
+        <div class="column is-4">
+            <div class="stat-card">
+                <div class="stat-value" id="correctAnswers">0</div>
+                <div class="stat-label">Richtig beantwortet</div>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="stat-card">
+                <div class="stat-value" id="totalQuestions">{{ content|length }}</div>
+                <div class="stat-label">Verfügbare Fragen</div>
+            </div>
+        </div>
+        <div class="column is-4">
+            <div class="stat-card">
+                <div class="stat-value" id="currentStreak">0</div>
+                <div class="stat-label">Aktuelle Serie</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Mode Selection -->
+<div class="box" id="modeSelection">
+    <h3 class="title is-4">📝 Quiz-Modus auswählen</h3>
+    
+    <div class="columns">
+        <div class="column is-4">
+            <div class="box content-card" onclick="startQuiz('practice')">
+                <div class="has-text-centered">
+                    <div class="content-type-icon" style="background: linear-gradient(135deg, #3b82f6, #1d4ed8);">
+                        <i class="fas fa-dumbbell"></i>
+                    </div>
+                    <h4 class="title is-5">🏃‍♂️ Übungsmodus</h4>
+                    <p>Entspanntes Lernen ohne Zeitdruck. Sofortiges Feedback nach jeder Antwort.</p>
+                    <span class="tag is-primary">Empfohlen</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="column is-4">
+            <div class="box content-card" onclick="startQuiz('timed')">
+                <div class="has-text-centered">
+                    <div class="content-type-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                        <i class="fas fa-stopwatch"></i>
+                    </div>
+                    <h4 class="title is-5">⏱️ Zeitmodus</h4>
+                    <p>30 Sekunden pro Frage. Teste dein Wissen unter Zeitdruck.</p>
+                    <span class="tag is-warning">Herausfordernd</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="column is-4">
+            <div class="box content-card" onclick="startQuiz('exam')">
+                <div class="has-text-centered">
+                    <div class="content-type-icon" style="background: linear-gradient(135deg, #ef4444, #dc2626);">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h4 class="title is-5">🎯 Prüfungsmodus</h4>
+                    <p>Simulation einer echten Prüfung. Keine Hilfen, finale Bewertung.</p>
+                    <span class="tag is-danger">Schwer</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Interface -->
+<div class="box" id="quizInterface" style="display: none;">
+    <!-- Quiz Header -->
+    <div class="level">
+        <div class="level-left">
+            <div class="level-item">
+                <div class="tags has-addons">
+                    <span class="tag is-dark">Frage</span>
+                    <span class="tag is-primary" id="questionCounter">1 / 10</span>
+                </div>
+            </div>
+        </div>
+        <div class="level-right">
+            <div class="level-item">
+                <div class="tags has-addons" id="timerSection" style="display: none;">
+                    <span class="tag is-dark">Zeit</span>
+                    <span class="tag is-warning" id="timer">30s</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <progress class="progress is-primary" id="quizProgress" value="0" max="100">0%</progress>
+    
+    <!-- Question Card -->
+    <div class="box has-background-light">
+        <div class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <span class="tag is-info" id="questionCategory">Rechtliche Grundlagen</span>
+                </div>
+            </div>
+            <div class="level-right">
+                <div class="level-item">
+                    <span class="tag" id="questionDifficulty">🟡 Mittel</span>
+                </div>
+            </div>
+        </div>
+        
+        <h3 class="title is-4" id="questionText">Frage wird geladen...</h3>
+        
+        <!-- Translation if enabled -->
+        <div id="questionTranslation" style="display: none;">
+            <div class="translation-item">
+                <strong>{{ session.translate_to|upper if session.translate_to }}:</strong>
+                <span id="translatedQuestion">Translation loading...</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Answer Options -->
+    <div id="answerOptions">
+        <!-- Options will be dynamically generated -->
+    </div>
+    
+    <!-- Action Buttons -->
+    <div class="field is-grouped is-grouped-centered" id="quizActions">
+        <div class="control">
+            <button class="button is-primary is-large" id="submitAnswer" onclick="submitAnswer()" disabled>
+                <span class="icon"><i class="fas fa-check"></i></span>
+                <span>Antwort bestätigen</span>
+            </button>
+        </div>
+        <div class="control">
+            <button class="button is-light" id="skipQuestion" onclick="skipQuestion()">
+                <span class="icon"><i class="fas fa-forward"></i></span>
+                <span>Überspringen</span>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Next Question Button (shown after answer) -->
+    <div class="field is-grouped is-grouped-centered" id="nextSection" style="display: none;">
+        <div class="control">
+            <button class="button is-success is-large" onclick="nextQuestion()">
+                <span class="icon"><i class="fas fa-arrow-right"></i></span>
+                <span>Nächste Frage</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Quiz Results -->
+<div class="box" id="quizResults" style="display: none;">
+    <div class="has-text-centered">
+        <div class="content-type-icon" style="background: linear-gradient(135deg, #10b981, #059669); width: 4rem; height: 4rem; font-size: 2rem;">
+            <i class="fas fa-trophy"></i>
+        </div>
+        
+        <h2 class="title is-2" id="resultsTitle">Quiz beendet!</h2>
+        <p class="subtitle is-4" id="resultsSubtitle">Hier sind deine Ergebnisse</p>
+        
+        <!-- Score Display -->
+        <div class="columns is-centered">
+            <div class="column is-8">
+                <div class="box has-background-success-light">
+                    <div class="columns">
+                        <div class="column">
+                            <div class="stat-card">
+                                <div class="stat-value" id="finalScore">0%</div>
+                                <div class="stat-label">Erreichte Punkte</div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="stat-card">
+                                <div class="stat-value" id="correctCount">0</div>
+                                <div class="stat-label">Richtige Antworten</div>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="stat-card">
+                                <div class="stat-value" id="timeSpent">0m</div>
+                                <div class="stat-label">Benötigte Zeit</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Motivational Message -->
+        <div class="notification" id="motivationMessage">
+            <p class="has-text-weight-bold">Ausgezeichnet! 🎉</p>
+            <p>Du hast großartige Fortschritte gemacht. Weiter so!</p>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="field is-grouped is-grouped-centered">
+            <div class="control">
+                <button class="button is-primary is-large" onclick="startNewQuiz()">
+                    <span class="icon"><i class="fas fa-redo"></i></span>
+                    <span>Neues Quiz starten</span>
+                </button>
+            </div>
+            <div class="control">
+                <button class="button is-success" onclick="reviewAnswers()">
+                    <span class="icon"><i class="fas fa-eye"></i></span>
+                    <span>Antworten überprüfen</span>
+                </button>
+            </div>
+            <div class="control">
+                <a href="{{ url_for('main.index') }}" class="button is-light">
+                    <span class="icon"><i class="fas fa-home"></i></span>
+                    <span>Zur Übersicht</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Quiz State
+let quizData = {{ content|tojson }};
+let currentQuiz = [];
+let currentQuestionIndex = 0;
+let selectedAnswer = null;
+let quizMode = 'practice';
+let score = 0;
+let correctAnswers = 0;
+let startTime = null;
+let timeRemaining = 30;
+let timerInterval = null;
+let userAnswers = [];
+
+// Initialize quiz system
+document.addEventListener('DOMContentLoaded', () => {
+    updateStats();
+});
+
+function startQuiz(mode) {
+    quizMode = mode;
+    currentQuestionIndex = 0;
+    score = 0;
+    correctAnswers = 0;
+    userAnswers = [];
+    startTime = new Date();
+    
+    // Filter and shuffle questions
+    currentQuiz = quizData.filter(q => q.content_data.fragen && q.content_data.fragen.length > 0);
+    currentQuiz = shuffleArray([...currentQuiz]).slice(0, 10); // Take 10 random questions
+    
+    // Show quiz interface
+    document.getElementById('modeSelection').style.display = 'none';
+    document.getElementById('quizInterface').style.display = 'block';
+    
+    // Setup timer for timed/exam mode
+    if (mode === 'timed' || mode === 'exam') {
+        document.getElementById('timerSection').style.display = 'block';
+    }
+    
+    loadQuestion();
+}
+
+function loadQuestion() {
+    if (currentQuestionIndex >= currentQuiz.length) {
+        endQuiz();
+        return;
+    }
+    
+    const question = currentQuiz[currentQuestionIndex];
+    const questionData = question.content_data.fragen[0]; // Take first question
+    
+    // Update counters
+    document.getElementById('questionCounter').textContent = `${currentQuestionIndex + 1} / ${currentQuiz.length}`;
+    document.getElementById('quizProgress').value = (currentQuestionIndex / currentQuiz.length) * 100;
+    
+    // Load question content
+    document.getElementById('questionText').textContent = questionData.frage;
+    document.getElementById('questionCategory').textContent = question.content_data.kategorie || 'Allgemein';
+    
+    // Set difficulty
+    const difficulty = question.content_data.schwierigkeit || 'mittel';
+    const difficultyEmoji = {
+        'leicht': '🟢 Leicht',
+        'mittel': '🟡 Mittel',
+        'schwer': '🔴 Schwer'
+    };
+    document.getElementById('questionDifficulty').textContent = difficultyEmoji[difficulty];
+    
+    // Load translation if needed
+    if ({{ 'true' if session.translate_to else 'false' }}) {
+        loadQuestionTranslation(questionData.frage);
+    }
+    
+    // Generate answer options
+    generateAnswerOptions(questionData);
+    
+    // Reset UI state
+    selectedAnswer = null;
+    document.getElementById('submitAnswer').disabled = true;
+    document.getElementById('nextSection').style.display = 'none';
+    document.getElementById('quizActions').style.display = 'block';
+    
+    // Start timer if needed
+    if (quizMode === 'timed' || quizMode === 'exam') {
+        startTimer();
+    }
+}
+
+function generateAnswerOptions(questionData) {
+    const container = document.getElementById('answerOptions');
+    container.innerHTML = '';
+    
+    const options = questionData.antworten || [];
+    
+    options.forEach((option, index) => {
+        const optionDiv = document.createElement('div');
+        optionDiv.className = 'quiz-option';
+        optionDiv.setAttribute('data-index', index);
+        optionDiv.innerHTML = `
+            <div class="level is-mobile">
+                <div class="level-left">
+                    <div class="level-item">
+                        <span class="tag is-light">${String.fromCharCode(65 + index)}</span>
+                        <span class="ml-3">${option.text}</span>
+                    </div>
+                </div>
+                <div class="level-right">
+                    <div class="level-item">
+                        <span class="icon">
+                            <i class="fas fa-circle-o"></i>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        optionDiv.addEventListener('click', () => selectAnswer(index, optionDiv));
+        container.appendChild(optionDiv);
+    });
+}
+
+function selectAnswer(index, element) {
+    // Remove previous selection
+    document.querySelectorAll('.quiz-option').forEach(opt => {
+        opt.classList.remove('is-selected');
+        opt.querySelector('.fa-circle-o').className = 'fas fa-circle-o';
+    });
+    
+    // Mark new selection
+    element.classList.add('is-selected');
+    element.querySelector('.fa-circle-o').className = 'fas fa-dot-circle';
+    
+    selectedAnswer = index;
+    document.getElementById('submitAnswer').disabled = false;
+}
+
+function submitAnswer() {
+    if (selectedAnswer === null) return;
+    
+    clearInterval(timerInterval);
+    
+    const question = currentQuiz[currentQuestionIndex];
+    const questionData = question.content_data.fragen[0];
+    const correctIndex = questionData.antworten.findIndex(a => a.correct);
+    const isCorrect = selectedAnswer === correctIndex;
+    
+    // Store answer
+    userAnswers.push({
+        questionId: question.id,
+        selectedAnswer: selectedAnswer,
+        correctAnswer: correctIndex,
+        isCorrect: isCorrect,
+        timeSpent: quizMode === 'timed' ? (30 - timeRemaining) : null
+    });
+    
+    if (isCorrect) {
+        correctAnswers++;
+        score += question.content_data.schwierigkeit === 'schwer' ? 3 : 
+                question.content_data.schwierigkeit === 'mittel' ? 2 : 1;
+    }
+    
+    // Show feedback
+    showAnswerFeedback(isCorrect, correctIndex);
+    
+    // Update UI
+    document.getElementById('quizActions').style.display = 'none';
+    document.getElementById('nextSection').style.display = 'block';
+    
+    updateStats();
+}
+
+function showAnswerFeedback(isCorrect, correctIndex) {
+    const options = document.querySelectorAll('.quiz-option');
+    
+    options.forEach((option, index) => {
+        if (index === correctIndex) {
+            option.classList.add('correct');
+        } else if (index === selectedAnswer && !isCorrect) {
+            option.classList.add('wrong');
+        }
+        option.style.pointerEvents = 'none';
+    });
+    
+    // Show toast
+    const message = isCorrect ? 'Richtig! 🎉' : 'Leider falsch 😞';
+    const type = isCorrect ? 'is-success' : 'is-danger';
+    
+    bulmaToast.toast({
+        message: message,
+        type: type,
+        duration: 2000,
+        position: 'top-right'
+    });
+}
+
+function nextQuestion() {
+    currentQuestionIndex++;
+    loadQuestion();
+}
+
+function skipQuestion() {
+    userAnswers.push({
+        questionId: currentQuiz[currentQuestionIndex].id,
+        selectedAnswer: null,
+        correctAnswer: null,
+        isCorrect: false,
+        skipped: true
+    });
+    
+    nextQuestion();
+}
+
+function startTimer() {
+    timeRemaining = 30;
+    updateTimerDisplay();
+    
+    timerInterval = setInterval(() => {
+        timeRemaining--;
+        updateTimerDisplay();
+        
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            // Auto-submit or skip
+            if (selectedAnswer !== null) {
+                submitAnswer();
+            } else {
+                skipQuestion();
+            }
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    const timer = document.getElementById('timer');
+    timer.textContent = `${timeRemaining}s`;
+    
+    if (timeRemaining <= 10) {
+        timer.className = 'tag is-danger';
+    } else if (timeRemaining <= 20) {
+        timer.className = 'tag is-warning';
+    } else {
+        timer.className = 'tag is-success';
+    }
+}
+
+function endQuiz() {
+    const endTime = new Date();
+    const timeSpent = Math.round((endTime - startTime) / 1000 / 60); // minutes
+    const percentage = Math.round((correctAnswers / currentQuiz.length) * 100);
+    
+    // Hide quiz interface
+    document.getElementById('quizInterface').style.display = 'none';
+    document.getElementById('quizResults').style.display = 'block';
+    
+    // Update results
+    document.getElementById('finalScore').textContent = `${percentage}%`;
+    document.getElementById('correctCount').textContent = `${correctAnswers}/${currentQuiz.length}`;
+    document.getElementById('timeSpent').textContent = `${timeSpent}m`;
+    
+    // Motivational message
+    const motivation = getMotivationalMessage(percentage);
+    document.getElementById('motivationMessage').innerHTML = motivation;
+    
+    // Save progress to backend
+    saveQuizResults();
+}
+
+function getMotivationalMessage(percentage) {
+    if (percentage >= 90) {
+        return '<p class="has-text-weight-bold">Perfekt! 🏆</p><p>Du beherrschst den Stoff ausgezeichnet!</p>';
+    } else if (percentage >= 80) {
+        return '<p class="has-text-weight-bold">Sehr gut! 🌟</p><p>Du bist auf dem richtigen Weg!</p>';
+    } else if (percentage >= 70) {
+        return '<p class="has-text-weight-bold">Gut gemacht! 👍</p><p>Mit etwas Übung wirst du noch besser!</p>';
+    } else if (percentage >= 60) {
+        return '<p class="has-text-weight-bold">Nicht schlecht! 📚</p><p>Wiederhole die Begriffe und versuche es erneut!</p>';
+    } else {
+        return '<p class="has-text-weight-bold">Übung macht den Meister! 💪</p><p>Gehe die Begriffe nochmal durch und probiere es erneut!</p>';
+    }
+}
+
+async function saveQuizResults() {
+    try {
+        const response = await fetch('/api/quiz/results', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mode: quizMode,
+                score: score,
+                correctAnswers: correctAnswers,
+                totalQuestions: currentQuiz.length,
+                answers: userAnswers,
+                timeSpent: Math.round((new Date() - startTime) / 1000)
+            })
+        });
+        
+        if (response.ok) {
+            console.log('Quiz results saved successfully');
+        }
+    } catch (error) {
+        console.error('Error saving quiz results:', error);
+    }
+}
+
+function startNewQuiz() {
+    document.getElementById('quizResults').style.display = 'none';
+    document.getElementById('modeSelection').style.display = 'block';
+}
+
+function reviewAnswers() {
+    // TODO: Implement answer review interface
+    bulmaToast.toast({
+        message: 'Antwort-Review wird implementiert...',
+        type: 'is-info',
+        duration: 3000
+    });
+}
+
+function loadQuestionTranslation(question) {
+    // TODO: Call translation API
+    const translationDiv = document.getElementById('questionTranslation');
+    translationDiv.style.display = 'block';
+    document.getElementById('translatedQuestion').textContent = 'Translation loading...';
+}
+
+function updateStats() {
+    document.getElementById('correctAnswers').textContent = correctAnswers;
+    document.getElementById('currentStreak').textContent = getUserStreak();
+}
+
+function getUserStreak() {
+    // Calculate current streak from recent answers
+    let streak = 0;
+    for (let i = userAnswers.length - 1; i >= 0; i--) {
+        if (userAnswers[i].isCorrect) {
+            streak++;
+        } else {
+            break;
+        }
+    }
+    return streak;
+}
+
+// Utility functions
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('quizInterface').style.display !== 'none') {
+        // Number keys for answer selection
+        if (e.key >= '1' && e.key <= '4') {
+            const index = parseInt(e.key) - 1;
+            const option = document.querySelector(`[data-index="${index}"]`);
+            if (option) {
+                selectAnswer(index, option);
+            }
+        }
+        
+        // Enter to submit
+        if (e.key === 'Enter' && selectedAnswer !== null) {
+            submitAnswer();
+        }
+        
+        // Space for next question
+        if (e.key === ' ' && document.getElementById('nextSection').style.display !== 'none') {
+            e.preventDefault();
+            nextQuestion();
+        }
+    }
+});
+</script>
+{% endblock %}

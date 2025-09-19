@@ -1,0 +1,567 @@
+{% extends "base.html" %}
+
+{% block title %}Begriffswand - IHK Privatrecht{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- Original V1 Begriffswand Content -->
+<div class="container">
+    <header class="header">
+        <div class="header-top">
+            <div class="header-title">
+                <h1><i class="fas fa-scale-balanced"></i> IHK Privatrecht</h1>
+                <p class="subtitle">Interaktive Begriffswand</p>
+            </div>
+            <div class="settings-area">
+                <button id="languageBtn" class="settings-btn" style="margin-right: 8px;">
+                    <i class="fas fa-globe"></i>
+                </button>
+                <button id="settingsBtn" class="settings-btn">
+                    <i class="fas fa-cog"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="progress-section">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <span class="progress-text" id="progressText">0 von 30 Begriffen gelernt</span>
+        </div>
+    </header>
+
+    <div class="controls">
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="searchInput" placeholder="Begriff suchen...">
+        </div>
+        
+        <div class="filter-container">
+            <select id="categoryFilter">
+                <option value="">Alle Kategorien</option>
+            </select>
+        </div>
+        
+        <div class="mode-toggle">
+            <button id="studyMode" class="mode-btn active">
+                <i class="fas fa-book"></i> Lernen
+            </button>
+            <button id="quizMode" class="mode-btn">
+                <i class="fas fa-question-circle"></i> Quiz
+            </button>
+        </div>
+    </div>
+
+    <main class="main-content">
+        <!-- Study Mode -->
+        <div id="studySection" class="study-section">
+            <div class="begriffe-grid" id="begriffeGrid">
+                <!-- Begriffe werden hier dynamisch eingefügt -->
+            </div>
+        </div>
+
+        <!-- Quiz Mode -->
+        <div id="quizSection" class="quiz-section hidden">
+            <div class="quiz-selection">
+                <h2><i class="fas fa-brain"></i> Quiz-Modus wählen</h2>
+                <div class="quiz-types">
+                    <div class="quiz-type-card" data-type="definition">
+                        <i class="fas fa-book-open"></i>
+                        <h3>Begriffe erkennen</h3>
+                        <p>Was bedeutet dieser Begriff?</p>
+                    </div>
+                    <div class="quiz-type-card" data-type="reverse">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>Begriff finden</h3>
+                        <p>Welcher Begriff wird hier erklärt?</p>
+                    </div>
+                    <div class="quiz-type-card" data-type="category">
+                        <i class="fas fa-folder"></i>
+                        <h3>Kategorien zuordnen</h3>
+                        <p>Zu welcher Kategorie gehört der Begriff?</p>
+                    </div>
+                    <div class="quiz-type-card" data-type="difficulty">
+                        <i class="fas fa-signal"></i>
+                        <h3>Nach Schwierigkeit</h3>
+                        <p>Quiz mit leichten, mittleren oder schweren Begriffen</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="quiz-container hidden">
+                <div class="quiz-header">
+                    <button id="backToQuizSelection" class="btn-back">
+                        <i class="fas fa-chevron-left"></i> Zurück
+                    </button>
+                    <h2 id="quizTypeTitle">Quiz</h2>
+                    <div class="quiz-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Richtig: <span id="correctCount">0</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-times-circle"></i>
+                            <span>Falsch: <span id="incorrectCount">0</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-trophy"></i>
+                            <span>Punkte: <span id="totalPoints">0</span></span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-clock"></i>
+                            <span>Zeit: <span id="quizTimer">00:00</span></span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="quiz-content">
+                    <div class="quiz-question-container">
+                        <div class="difficulty-indicator" id="difficultyIndicator"></div>
+                        <h3 id="quizQuestion">Frage wird geladen...</h3>
+                        <div class="quiz-options" id="quizOptions"></div>
+                        <div class="quiz-feedback" id="quizFeedback"></div>
+                        <div class="quiz-controls">
+                            <button id="nextQuizBtn" class="btn btn-primary hidden">Nächste Frage</button>
+                            <button id="endQuizBtn" class="btn btn-secondary">Quiz beenden</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="modal-close" id="settingsClose">&times;</span>
+            <div class="modal-body">
+                <h2><i class="fas fa-cog"></i> Einstellungen</h2>
+                
+                <div class="settings-section">
+                    <h3><i class="fas fa-eye"></i> Anzeige</h3>
+                    <div class="setting-group">
+                        <label class="setting-item">
+                            <input type="checkbox" id="showDifficulty" checked>
+                            <span>Schwierigkeitsgrad anzeigen</span>
+                        </label>
+                        <label class="setting-item">
+                            <input type="checkbox" id="showProgress" checked>
+                            <span>Fortschrittsbalken anzeigen</span>
+                        </label>
+                        <label class="setting-item">
+                            <input type="checkbox" id="showExamples" checked>
+                            <span>Beispiele in Karten anzeigen</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3><i class="fas fa-graduation-cap"></i> Lernmodus</h3>
+                    <div class="setting-group">
+                        <label class="setting-item">
+                            <input type="checkbox" id="autoMarkLearned">
+                            <span>Automatisch als gelernt markieren nach Quiz</span>
+                        </label>
+                        <label class="setting-item">
+                            <input type="checkbox" id="shuffleQuestions" checked>
+                            <span>Quiz-Fragen mischen</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h3><i class="fas fa-chart-line"></i> Fortschritt</h3>
+                    <div class="progress-stats">
+                        <div class="stat-box">
+                            <div class="stat-value" id="totalLearned">0</div>
+                            <div class="stat-label">Begriffe gelernt</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="totalQuizzes">0</div>
+                            <div class="stat-label">Quiz absolviert</div>
+                        </div>
+                        <div class="stat-box">
+                            <div class="stat-value" id="avgScore">0%</div>
+                            <div class="stat-label">Durchschnittliche Punktzahl</div>
+                        </div>
+                    </div>
+                    <button id="resetProgress" class="btn btn-warning">
+                        <i class="fas fa-refresh"></i> Fortschritt zurücksetzen
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Begriff Detail Modal -->
+    <div id="begriffModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="modal-close" id="modalClose">&times;</span>
+            <div class="modal-body">
+                <h2 id="modalTerm"></h2>
+                <div class="modal-category" id="modalCategory"></div>
+                
+                <div class="modal-section">
+                    <h3><i class="fas fa-info-circle"></i> Erklärung</h3>
+                    <p id="modalExplanation"></p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3><i class="fas fa-lightbulb"></i> Beispiel</h3>
+                    <p id="modalExample"></p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3><i class="fas fa-star"></i> Tipp</h3>
+                    <p id="modalTip"></p>
+                </div>
+                
+                <div class="modal-section">
+                    <h3><i class="fas fa-globe"></i> Übersetzungen</h3>
+                    <div class="translations" id="modalTranslations">
+                        <!-- Übersetzungen werden dynamisch basierend auf Sprachauswahl eingefügt -->
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button id="toggleLearned" class="btn btn-success">
+                        <i class="fas fa-check"></i> Als gelernt markieren
+                    </button>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- Language Selection Modal -->
+    <div id="languageModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="modal-close" id="languageClose">&times;</span>
+            <div class="modal-body">
+                <h2><i class="fas fa-globe"></i> Übersetzungssprachen</h2>
+                <p style="margin-bottom: 1.5rem; color: #666;">Wählen Sie die Sprachen aus, die in den Begriff-Details angezeigt werden sollen:</p>
+                
+                <div id="languageGrid" class="language-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <!-- Language cards will be inserted here -->
+                </div>
+                
+                <div class="modal-actions" style="margin-top: 2rem; text-align: center;">
+                    <button id="selectAllLanguages" class="btn btn-secondary" style="margin-right: 1rem;">
+                        <i class="fas fa-check-double"></i> Alle auswählen
+                    </button>
+                    <button id="deselectAllLanguages" class="btn btn-secondary" style="margin-right: 1rem;">
+                        <i class="fas fa-times"></i> Alle abwählen
+                    </button>
+                    <button id="saveLanguages" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Speichern
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/app.js') }}?v=2"></script>
+<script src="{{ url_for('static', filename='js/quiz.js') }}?v=2"></script>
+<script>
+// Einfache Settings nur für Begriffswand
+document.addEventListener('DOMContentLoaded', function() {
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const settingsClose = document.getElementById('settingsClose');
+    const languageBtn = document.getElementById('languageBtn');
+    const languageModal = document.getElementById('languageModal');
+    const languageClose = document.getElementById('languageClose');
+    
+    // Settings Modal öffnen/schließen
+    if (settingsBtn && settingsModal && settingsClose) {
+        settingsBtn.addEventListener('click', function() {
+            settingsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+        
+        settingsClose.addEventListener('click', function() {
+            settingsModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            updateModalTranslations(); // Refresh translations when settings close
+        });
+        
+        settingsModal.addEventListener('click', function(e) {
+            if (e.target === settingsModal) {
+                settingsModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                updateModalTranslations();
+            }
+        });
+    }
+    
+    // Language Modal öffnen/schließen
+    if (languageBtn && languageModal && languageClose) {
+        languageBtn.addEventListener('click', function() {
+            languageModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            renderLanguageGrid();
+        });
+        
+        languageClose.addEventListener('click', function() {
+            languageModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        });
+        
+        languageModal.addEventListener('click', function(e) {
+            if (e.target === languageModal) {
+                languageModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
+    
+    // Global language selection state
+    let selectedLanguages = [];
+    
+    // Language grid rendering
+    function renderLanguageGrid() {
+        const languageGrid = document.getElementById('languageGrid');
+        if (!languageGrid) return;
+        
+        const languages = [
+            { code: 'en', name: 'English', flag: '🇬🇧', native: 'English' },
+            { code: 'ar', name: 'Arabisch', flag: '🇸🇦', native: 'العربية' },
+            { code: 'tr', name: 'Türkisch', flag: '🇹🇷', native: 'Türkçe' },
+            { code: 'ru', name: 'Russisch', flag: '🇷🇺', native: 'Русский' },
+            { code: 'pl', name: 'Polnisch', flag: '🇵🇱', native: 'Polski' },
+            { code: 'it', name: 'Italienisch', flag: '🇮🇹', native: 'Italiano' },
+            { code: 'fr', name: 'Französisch', flag: '🇫🇷', native: 'Français' },
+            { code: 'es', name: 'Spanisch', flag: '🇪🇸', native: 'Español' },
+            { code: 'pt', name: 'Portugiesisch', flag: '🇵🇹', native: 'Português' },
+            { code: 'nl', name: 'Niederländisch', flag: '🇳🇱', native: 'Nederlands' },
+            { code: 'sv', name: 'Schwedisch', flag: '🇸🇪', native: 'Svenska' },
+            { code: 'da', name: 'Dänisch', flag: '🇩🇰', native: 'Dansk' },
+            { code: 'no', name: 'Norwegisch', flag: '🇳🇴', native: 'Norsk' },
+            { code: 'fi', name: 'Finnisch', flag: '🇫🇮', native: 'Suomi' },
+            { code: 'cs', name: 'Tschechisch', flag: '🇨🇿', native: 'Čeština' },
+            { code: 'sk', name: 'Slowakisch', flag: '🇸🇰', native: 'Slovenčina' },
+            { code: 'hu', name: 'Ungarisch', flag: '🇭🇺', native: 'Magyar' },
+            { code: 'ro', name: 'Rumänisch', flag: '🇷🇴', native: 'Română' },
+            { code: 'bg', name: 'Bulgarisch', flag: '🇧🇬', native: 'Български' },
+            { code: 'hr', name: 'Kroatisch', flag: '🇭🇷', native: 'Hrvatski' },
+            { code: 'sr', name: 'Serbisch', flag: '🇷🇸', native: 'Српски' },
+            { code: 'uk', name: 'Ukrainisch', flag: '🇺🇦', native: 'Українська' },
+            { code: 'zh', name: 'Chinesisch', flag: '🇨🇳', native: '中文' },
+            { code: 'ja', name: 'Japanisch', flag: '🇯🇵', native: '日本語' },
+            { code: 'ko', name: 'Koreanisch', flag: '🇰🇷', native: '한국어' }
+        ];
+        
+        // Get user's preferred language and use as default
+        let defaultLanguages = ["en", "ar", "tr"];
+        if (window.userPreferredLanguage) {
+            defaultLanguages = [window.userPreferredLanguage, "en"].filter((lang, index, arr) => arr.indexOf(lang) === index);
+        }
+        selectedLanguages = JSON.parse(localStorage.getItem('selectedLanguages') || JSON.stringify(defaultLanguages));
+        
+        languageGrid.innerHTML = '';
+        
+        languages.forEach(lang => {
+            const languageCard = document.createElement('div');
+            languageCard.className = `language-card ${selectedLanguages.includes(lang.code) ? 'active' : ''}`;
+            languageCard.style.cssText = `
+                padding: 1rem;
+                border: 2px solid #e5e7eb;
+                border-radius: 8px;
+                text-align: center;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                background: white;
+            `;
+            
+            if (selectedLanguages.includes(lang.code)) {
+                languageCard.style.borderColor = '#10b981';
+                languageCard.style.backgroundColor = '#f0fdfa';
+            }
+            
+            languageCard.innerHTML = `
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">${lang.flag}</div>
+                <div style="font-weight: 600; margin-bottom: 0.25rem;">${lang.name}</div>
+                <div style="font-size: 0.875rem; color: #666;">${lang.native}</div>
+            `;
+            
+            languageCard.addEventListener('click', function() {
+                const isSelected = selectedLanguages.includes(lang.code);
+                if (isSelected) {
+                    const index = selectedLanguages.indexOf(lang.code);
+                    selectedLanguages.splice(index, 1);
+                    languageCard.classList.remove('active');
+                    languageCard.style.borderColor = '#e5e7eb';
+                    languageCard.style.backgroundColor = 'white';
+                } else {
+                    selectedLanguages.push(lang.code);
+                    languageCard.classList.add('active');
+                    languageCard.style.borderColor = '#10b981';
+                    languageCard.style.backgroundColor = '#f0fdfa';
+                }
+            });
+            
+            languageGrid.appendChild(languageCard);
+        });
+    }
+    
+    // Save languages button
+    const saveLanguages = document.getElementById('saveLanguages');
+    if (saveLanguages) {
+        saveLanguages.addEventListener('click', function() {
+            localStorage.setItem('selectedLanguages', JSON.stringify(selectedLanguages));
+            languageModal.classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            if (window.currentModalBegriff) {
+                updateModalTranslations();
+            }
+        });
+    }
+    
+    // Select/Deselect All buttons
+    const selectAllLanguages = document.getElementById('selectAllLanguages');
+    const deselectAllLanguages = document.getElementById('deselectAllLanguages');
+    
+    if (selectAllLanguages) {
+        selectAllLanguages.addEventListener('click', function() {
+            selectedLanguages = ['en', 'ar', 'tr', 'ru', 'pl', 'it', 'fr', 'es', 'pt', 'nl', 'sv', 'da', 'no', 'fi', 'cs', 'sk', 'hu', 'ro', 'bg', 'hr', 'sr', 'uk', 'zh', 'ja', 'ko'];
+            renderLanguageGrid();
+        });
+    }
+    
+    if (deselectAllLanguages) {
+        deselectAllLanguages.addEventListener('click', function() {
+            selectedLanguages = ['en']; // Keep at least English
+            renderLanguageGrid();
+        });
+    }
+    
+    // Simple language checkboxes
+    const languageCheckboxes = ['showEnglish', 'showArabic', 'showTurkish', 'showRussian'];
+    languageCheckboxes.forEach(id => {
+        const checkbox = document.getElementById(id);
+        if (checkbox) {
+            // Load saved state
+            const saved = localStorage.getItem(id);
+            if (saved !== null) {
+                checkbox.checked = JSON.parse(saved);
+            }
+            
+            // Save state on change
+            checkbox.addEventListener('change', function() {
+                localStorage.setItem(id, JSON.stringify(this.checked));
+            });
+        }
+    });
+});
+
+// Simple settingsManager for compatibility  
+// Translation cache for performance
+const translationCache = new Map();
+
+// MyMemory API translation function
+async function translateText(text, fromLang, toLang) {
+    const cacheKey = `${fromLang}-${toLang}-${text}`;
+    if (translationCache.has(cacheKey)) {
+        return translationCache.get(cacheKey);
+    }
+    
+    try {
+        const response = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`);
+        const data = await response.json();
+        let translation = data.responseData.translatedText;
+        
+        // Basic cleanup
+        if (translation.includes('MYMEMORY WARNING')) {
+            translation = text; // Fallback to original if API has issues
+        }
+        
+        translationCache.set(cacheKey, translation);
+        return translation;
+    } catch (error) {
+        console.error('Translation error:', error);
+        return text; // Fallback to original text
+    }
+}
+
+window.settingsManager = {
+    updateModalTranslations: async function() {
+        const currentBegriff = window.currentModalBegriff;
+        if (!currentBegriff) return;
+        
+        const translationsContainer = document.getElementById('modalTranslations');
+        if (!translationsContainer) return;
+        
+        // Get user's preferred language and use as default
+        let defaultLanguages = ["en", "ar", "tr"];
+        if (window.userPreferredLanguage) {
+            defaultLanguages = [window.userPreferredLanguage, "en"].filter((lang, index, arr) => arr.indexOf(lang) === index);
+        }
+        const selectedLanguages = JSON.parse(localStorage.getItem('selectedLanguages') || JSON.stringify(defaultLanguages));
+        const languageMap = {
+            'en': { flag: '🇬🇧', native: 'English', field: 'englisch' },
+            'ar': { flag: '🇸🇦', native: 'العربية', field: 'arabisch' },
+            'tr': { flag: '🇹🇷', native: 'Türkçe', field: 'tuerkisch' },
+            'ru': { flag: '🇷🇺', native: 'Русский' },
+            'pl': { flag: '🇵🇱', native: 'Polski' },
+            'it': { flag: '🇮🇹', native: 'Italiano' },
+            'fr': { flag: '🇫🇷', native: 'Français' },
+            'es': { flag: '🇪🇸', native: 'Español' },
+            'pt': { flag: '🇵🇹', native: 'Português' },
+            'nl': { flag: '🇳🇱', native: 'Nederlands' },
+            'sv': { flag: '🇸🇪', native: 'Svenska' },
+            'da': { flag: '🇩🇰', native: 'Dansk' },
+            'no': { flag: '🇳🇴', native: 'Norsk' },
+            'fi': { flag: '🇫🇮', native: 'Suomi' },
+            'cs': { flag: '🇨🇿', native: 'Čeština' },
+            'sk': { flag: '🇸🇰', native: 'Slovenčina' },
+            'hu': { flag: '🇭🇺', native: 'Magyar' },
+            'ro': { flag: '🇷🇴', native: 'Română' },
+            'bg': { flag: '🇧🇬', native: 'Български' },
+            'hr': { flag: '🇭🇷', native: 'Hrvatski' },
+            'sr': { flag: '🇷🇸', native: 'Српски' },
+            'uk': { flag: '🇺🇦', native: 'Українська' },
+            'zh': { flag: '🇨🇳', native: '中文' },
+            'ja': { flag: '🇯🇵', native: '日本語' },
+            'ko': { flag: '🇰🇷', native: '한국어' }
+        };
+        
+        // Show loading state
+        translationsContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: #666;"><i class="fas fa-spinner fa-spin"></i> Übersetzungen werden geladen...</div>';
+        
+        let html = '';
+        for (const langCode of selectedLanguages) {
+            const lang = languageMap[langCode];
+            if (!lang) continue;
+            
+            let translation;
+            
+            // Use database translation if available, otherwise use live translation
+            if (lang.field && currentBegriff[lang.field]) {
+                translation = currentBegriff[lang.field];
+            } else {
+                // Use live translation for all languages
+                translation = await translateText(currentBegriff.erklaerung, 'de', langCode);
+            }
+            
+            html += `
+                <div class="translation">
+                    <span class="lang">${lang.flag}</span>
+                    <div class="translation-content">
+                        <div class="translation-text">${translation}</div>
+                        <div class="translation-label">${lang.native}</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        translationsContainer.innerHTML = html;
+    }
+};
+</script>
+{% endblock %}
